@@ -6,6 +6,7 @@ const TABLE_USER = 'users';
 
 spl_autoload_register(function(string $className): void {
     $folders = [
+        'api/',
         'utils/'
     ];
 
