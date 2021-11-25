@@ -16,6 +16,4 @@ abstract class Entity {
         return $this->ID;
     }
 
-    public abstract function tableName(): string;
-
 }

@@ -72,8 +72,4 @@ class User extends Entity {
         $this->lastSeenTimePrivacy = $lastSeenTimePrivacy;
     }
 
-    public function tableName(): string {
-        return 'users';
-    }
-
 }

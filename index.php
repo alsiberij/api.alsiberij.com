@@ -2,6 +2,8 @@
 
 const ROOT = __DIR__ . '/';
 
+const TABLE_USER = 'users';
+
 spl_autoload_register(function(string $className): void {
     $folders = [
         'utils/'
