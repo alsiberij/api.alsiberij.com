@@ -72,4 +72,31 @@ class User extends Entity {
         $this->lastSeenTimePrivacy = $lastSeenTimePrivacy;
     }
 
+    public function toArray(): array {
+        return array_merge(parent::toArray(), [
+            'ID' => $this->ID,
+            'isActivated' => $this->isActivated,
+            'accessToken' => $this->accessToken,
+            'isAdministrator' => $this->isAdministrator,
+            'isModerator' => $this->isModerator,
+            'privacy' => $this->privacy,
+            'nickname' => $this->nickname,
+            'email' => $this->email,
+            'emailPrivacy' => $this->emailPrivacy,
+            'password' => $this->password,
+            'salt' => $this->salt,
+            'registrationDate' => $this->registrationDate->format('Y.m.d H:i:s'),
+            'balance' => $this->balance,
+            'balancePrivacy' => $this->balancePrivacy,
+            'avatar' => $this->avatar,
+            'birthday' => $this->birthday ? $this->birthday->format('Y.m.d H:i:s') : '',
+            'location' => $this->location,
+            'bio' => $this->bio,
+            'likes' => $this->likes,
+            'comments' => $this->comments,
+            'paidOrders' => $this->paidOrders,
+            'lastSeenTime' => $this->lastSeenTime->format('Y.m.d H:i:s')
+        ]);
+    }
+
 }

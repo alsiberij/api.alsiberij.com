@@ -16,4 +16,8 @@ abstract class Entity {
         return $this->ID;
     }
 
+    public function toArray(): array {
+        return ['ID' => $this->ID];
+    }
+
 }
