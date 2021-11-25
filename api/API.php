@@ -1,7 +1,7 @@
 <?php
 
 
-abstract class Api {
+abstract class API {
 
     protected ?User $authorizedUser;
     protected PDO $db;
