@@ -99,4 +99,16 @@ class User extends Entity {
         ]);
     }
 
+    public function getPrivacy(): bool {
+        return $this->privacy;
+    }
+
+    public function getEmailPrivacy(): bool {
+        return $this->emailPrivacy;
+    }
+
+    public function getBalancePrivacy(): bool {
+        return $this->balancePrivacy;
+    }
+
 }
