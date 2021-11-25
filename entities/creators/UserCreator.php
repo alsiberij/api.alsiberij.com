@@ -13,9 +13,10 @@ class UserCreator extends EntityCreator {
         }
         if ($r = $result->fetch(PDO::FETCH_ASSOC)) {
             return new User($r['ID'], $r['activation'], $r['accessToken'], $r['administrator'], $r['moderator'],
-                $r['privacy'], $r['nickname'], $r['email'], $r['emailPrivacy'], $r['password'], $r['registrationDate'],
-                $r['balance'], $r['balancePrivacy'], $r['avatar'], $r['birthday'], $r['location'], $r['bio'],
-                $r['likes'], $r['comments'], $r['paidOrders'], $r['lastSeenTime'], $r['lastSeenTimePrivacy']);
+                $r['privacy'], $r['nickname'], $r['email'], $r['emailPrivacy'], $r['password'], $r['salt'],
+                $r['registrationDate'], $r['balance'], $r['balancePrivacy'], $r['avatar'], $r['birthday'],
+                $r['location'], $r['bio'], $r['likes'], $r['comments'], $r['paidOrders'], $r['lastSeenTime'],
+                $r['lastSeenTimePrivacy']);
         } else {
             return null;
         }

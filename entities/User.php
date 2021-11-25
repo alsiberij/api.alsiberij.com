@@ -12,6 +12,7 @@ class User extends Entity {
     protected string $email;
     protected bool $emailPrivacy;
     protected string $password;
+    protected string $salt;
     protected DateTime $registrationDate;
     protected int $balance;
     protected bool $balancePrivacy;
@@ -27,7 +28,7 @@ class User extends Entity {
 
     public function __construct(int $ID, bool $isActivated, ?string $accessToken, bool $isAdmin, bool $contentCreator,
                                 bool $privacy, string $nickname, string $email, bool $emailPrivacy, string $password,
-                                string $registrationDate, int $balance, bool $balancePrivacy, bool $avatar,
+                                string $salt, string $registrationDate, int $balance, bool $balancePrivacy, bool $avatar,
                                 ?string $birthday, ?string $location, ?string $bio, int $likes, int $comments,
                                 int $paidOrders, string $lastSeenTime, bool $lastSeenTimePrivacy) {
         parent::__construct($ID);
@@ -40,6 +41,7 @@ class User extends Entity {
         $this->email = $email;
         $this->emailPrivacy = $emailPrivacy;
         $this->password = $password;
+        $this->salt = $salt;
         try {
             $this->registrationDate = new DateTime($registrationDate);
         } catch (Exception $ex) {
