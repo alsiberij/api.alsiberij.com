@@ -9,5 +9,5 @@ abstract class EntityCreator {
         $this->db = DB::getConnection();
     }
 
-    public abstract function newInstance(): ?Entity;
+    public abstract function newInstance(int $ID): ?Entity;
 }
