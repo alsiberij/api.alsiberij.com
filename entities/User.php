@@ -5,8 +5,8 @@ class User extends Entity {
 
     protected bool $isActivated;
     protected ?string $accessToken;
-    protected bool $isAdmin;
-    protected bool $contentCreator;
+    protected bool $isAdministrator;
+    protected bool $isModerator;
     protected bool $privacy;
     protected string $nickname;
     protected string $email;
@@ -33,8 +33,8 @@ class User extends Entity {
         parent::__construct($ID);
         $this->isActivated = $isActivated;
         $this->accessToken = $accessToken;
-        $this->isAdmin = $isAdmin;
-        $this->contentCreator = $contentCreator;
+        $this->isAdministrator = $isAdmin;
+        $this->isModerator = $contentCreator;
         $this->privacy = $privacy;
         $this->nickname = $nickname;
         $this->email = $email;
