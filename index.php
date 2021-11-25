@@ -4,7 +4,7 @@ const ROOT = __DIR__ . '/';
 
 spl_autoload_register(function(string $className): void {
     $folders = [
-
+        'utils/'
     ];
 
     foreach ($folders as $folder) {
