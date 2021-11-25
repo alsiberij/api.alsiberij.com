@@ -111,4 +111,12 @@ class User extends Entity {
         return $this->balancePrivacy;
     }
 
+    public function isAdministrator(): bool {
+        return $this->isAdministrator;
+    }
+
+    public function isModerator(): bool {
+        return $this->isModerator;
+    }
+
 }
