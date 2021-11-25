@@ -10,4 +10,6 @@ abstract class EntityCreator {
     }
 
     public abstract function newInstance(int $ID): ?Entity;
+
+    protected abstract function tableName(): string;
 }
