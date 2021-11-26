@@ -26,7 +26,7 @@ abstract class API {
                 die;
             }
         } elseif($accessToken = $_POST['accessToken'] ?? $_GET['accessToken'] ?? null) {
-            $result = $this->db->prepare('SELECT * FROM ' . TABLE_USER . ' WHERE access_token = :token');
+            $result = $this->db->prepare('SELECT * FROM ' . TABLE_USER . ' WHERE accessToken = :token');
             $result->bindParam(':token', $accessToken);
             if (!$result->execute()) {
                 http_response_code(500);

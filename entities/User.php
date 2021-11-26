@@ -89,7 +89,7 @@ class User extends Entity {
             'balance' => $this->balance,
             'balancePrivacy' => $this->balancePrivacy,
             'avatar' => $this->avatar,
-            'birthday' => $this->birthday ? $this->birthday->format('Y.m.d H:i:s') : '',
+            'birthday' => $this->birthday ? $this->birthday->format('Y.m.d H:i:s') : null,
             'location' => $this->location,
             'bio' => $this->bio,
             'likes' => $this->likes,
