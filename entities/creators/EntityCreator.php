@@ -11,4 +11,6 @@ abstract class EntityCreator {
 
     public abstract function newInstance(int $ID): ?Entity;
 
+    public abstract function allInstances(): array;
+
 }

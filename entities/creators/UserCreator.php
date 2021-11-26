@@ -22,4 +22,22 @@ class UserCreator extends EntityCreator {
         }
     }
 
+    public function allInstances(): array {
+        $result = $this->db->query('SELECT * FROM ' . TABLE_USER);
+        if (!$result->execute()) {
+            http_response_code(500);
+            echo(json_encode(['error'=>'Internal DB error']));
+            die;
+        }
+        $usersList = [];
+        while ($r = $result->fetch(PDO::FETCH_ASSOC)) {
+            $usersList[] = new User($r['ID'], $r['activation'], $r['accessToken'], $r['administrator'], $r['moderator'],
+                $r['privacy'], $r['nickname'], $r['email'], $r['emailPrivacy'], $r['password'], $r['salt'],
+                $r['registrationDate'], $r['balance'], $r['balancePrivacy'], $r['avatar'], $r['birthday'],
+                $r['location'], $r['bio'], $r['likes'], $r['comments'], $r['paidOrders'], $r['lastSeenTime'],
+                $r['lastSeenTimePrivacy']);
+        }
+        return $usersList;
+    }
+
 }
