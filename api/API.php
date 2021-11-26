@@ -12,7 +12,7 @@ abstract class API {
         $r = null;
         if (isset($_SESSION['userID'])) {
             $userID = $_SESSION['userID'];
-            $result = $this->db->prepare('SELECT * FROM '.TABLE_USER.' WHERE id = :ID');
+            $result = $this->db->prepare('SELECT * FROM '.TABLE_USER.' WHERE ID = :ID');
             $result->bindParam(':ID', $userID, PDO::PARAM_INT);
             if (!$result->execute()) {
                 http_response_code(500);
