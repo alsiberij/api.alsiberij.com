@@ -45,7 +45,6 @@ if (count($entityAndMethod) != 2) {
 
 [$entityName, $methodName] = $entityAndMethod;
 $entityName = strtolower($entityName);
-$methodName = strtolower($methodName);
 
 $entity = ApiObjectFactory::newInstance($entityName);
 if (!$entity) {
