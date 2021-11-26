@@ -95,7 +95,8 @@ class User extends Entity {
             'likes' => $this->likes,
             'comments' => $this->comments,
             'paidOrders' => $this->paidOrders,
-            'lastSeenTime' => $this->lastSeenTime->format('Y.m.d H:i:s')
+            'lastSeenTime' => $this->lastSeenTime->format('Y.m.d H:i:s'),
+            'lastSeenTimePrivacy' => $this->lastSeenTimePrivacy,
         ]);
     }
 
