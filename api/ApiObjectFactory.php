@@ -1,7 +1,7 @@
 <?php
 
 
-class EntityApiFactory {
+class ApiObjectFactory {
 
     public static function newInstance(string $entityName): ?API {
         switch ($entityName) {
