@@ -12,6 +12,7 @@ class UserAPI extends API implements Retrievable {
         switch ($methodName) {
             case 'get': {
                 $this->get();
+                return;
             }
 
 
