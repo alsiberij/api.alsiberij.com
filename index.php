@@ -26,6 +26,9 @@ spl_autoload_register(function(string $className): void {
 
 header('Content-type: application/json');
 
+if (isset($_COOKIE['PHPSESSID'])) {
+    setcookie('PHPSESSID', '', time() - 1, '/');
+}
 unset($_COOKIE['PHPSESSID']);
 
 if (isset($_POST['session']) || isset($_GET['session'])) {
