@@ -24,3 +24,5 @@ spl_autoload_register(function(string $className): void {
     }
 });
 
+header('Content-type: application/json');
+
