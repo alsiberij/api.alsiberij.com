@@ -14,7 +14,10 @@ class UserAPI extends API implements Retrievable {
                 $this->get();
                 return;
             }
-
+            case 'getAll': {
+                $this->getAll();
+                return;
+            }
 
             default: {
                 http_response_code(405);
@@ -79,7 +82,43 @@ class UserAPI extends API implements Retrievable {
     }
 
     public function getAll(): void {
+        $usersList = $this->creator->allInstances();
 
+        array_walk($usersList, function(User &$user, int $index): void {
+            $accessAllData = false;
+            if ($this->authorizedUser &&
+                ($this->authorizedUser->getID() == $user->getID() || $this->authorizedUser->isAdministrator())) {
+                $accessAllData = true;
+            }
+
+            $user = $user->toArray();
+
+            if ($accessAllData || $user['privacy']) {
+                unset($user['password']);
+                unset($user['salt']);
+                unset($user['accessToken']);
+                unset($user['isActivated']);
+                if (!$accessAllData) {
+                    if (!$user['emailPrivacy']) {
+                        $user['email'] = null;
+                    }
+                    if (!$user['balancePrivacy']) {
+                        $user['balance'] = null;
+                    }
+                    if (!$user['lastSeenTimePrivacy']) {
+                        $user['lastSeenTime'] = null;
+                    }
+                }
+            } else {
+                $user = null;
+            }
+        });
+
+        $usersList = array_values(array_filter($usersList));
+
+        http_response_code(200);
+        echo(json_encode(['response'=>$usersList]));
+        die;
     }
 
 }
