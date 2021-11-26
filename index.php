@@ -9,6 +9,9 @@ spl_autoload_register(function(string $className): void {
         'api/',
         'api/interfaces/',
 
+        'entities/',
+        'entities/creators/',
+
         'utils/'
     ];
 
