@@ -143,25 +143,14 @@ class UserAPI extends API implements Retrievable, Creatable {
         $saltMD5 = md5($salt);
         $password = md5(substr($saltMD5, 0, 16) . $password . substr($saltMD5, 16, 16));
 
-        //TODO Unite in transaction
-
-        $query = 'INSERT INTO users (nickname, email, password, salt) VALUES (:nickname, :email, :password, :salt);';
+        $query = 'INSERT INTO users (activationToken, nickname, email, password, salt) VALUES (:token, :nickname, :email, :password, :salt);';
         $result = $this->db->prepare($query);
+        $activationToken = User::generateToken();
+        $result->bindParam(':token', $activationToken);
         $result->bindParam(':nickname', $nickname);
         $result->bindParam(':email', $email);
         $result->bindParam(':password', $password);
         $result->bindParam(':salt', $salt);
-        if (!$result->execute()) {
-            http_response_code(400);
-            echo(json_encode(['error' => 'Query can not be executed']));
-            die;
-        }
-
-        $query = 'INSERT INTO activations (userID, token) SELECT ID, :token FROM users WHERE email = :email;';
-        $result = $this->db->prepare($query);
-        $result->bindParam(':email', $email);
-        $activationToken = Activation::generateToken();
-        $result->bindParam(':token', $activationToken);
         if (!$result->execute()) {
             http_response_code(400);
             echo(json_encode(['error' => 'Query can not be executed']));
@@ -176,13 +165,13 @@ class UserAPI extends API implements Retrievable, Creatable {
                 </html>";
         $from = 'From: '. EMAIL . '\r\n';
         if (!mail($email, 'Регистрация', $msg, $from)) {
-            http_response_code(400);
+            http_response_code(500);
             echo(json_encode(['error' => 'Email can\'t be sent']));
             die;
         }
 
         http_response_code(200);
-        echo(json_encode(['response' => 'Sign Up successful']));
+        echo(json_encode(['response' => 'Success']));
     }
 
     public function delete(): void {

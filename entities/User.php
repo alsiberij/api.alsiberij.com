@@ -3,6 +3,8 @@
 
 class User extends Entity {
 
+    protected bool $activationStatus;
+    protected string $activationToken;
     protected ?string $accessToken;
     protected bool $isAdministrator;
     protected bool $isModerator;
@@ -24,6 +26,9 @@ class User extends Entity {
     protected int $paidOrders;
     protected DateTime $lastSeenTime;
     protected bool $lastSeenTimePrivacy;
+
+    protected const TOKEN_LENGTH = 32;
+    public const TOKEN_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-#*';
 
     public const NICKNAME_MIN_LENGTH = 3;
     public const NICKNAME_MAX_LENGTH = 32;
@@ -107,13 +112,40 @@ class User extends Entity {
         return $salt;
     }
 
+    private static function validateToken(string $token): bool {
+        $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE activationToken = :token');
+        $result->bindParam(':token', $token);
+        if (!$result->execute()) {
+            http_response_code(500);
+            echo(json_encode(['error' => 'Query can not be executed']));
+            die;
+        }
+        if ($result->fetch(PDO::FETCH_ASSOC)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
 
-    public function __construct(int $ID, ?string $accessToken, bool $isAdmin, bool $contentCreator,
+    public static function generateToken(): string {
+        do {
+            $token = '';
+            for ($i = 0; $i < self::TOKEN_LENGTH; $i++) {
+                $token .= self::TOKEN_ALPHABET[rand(0, mb_strlen(self::TOKEN_ALPHABET) - 1)];
+            }
+        } while (!self::validateToken($token));
+        return $token;
+    }
+
+
+    public function __construct(int $ID, bool $activationStatus, string $activationToken, ?string $accessToken, bool $isAdmin, bool $contentCreator,
                                 bool $privacy, string $nickname, string $email, bool $emailPrivacy, string $password,
                                 string $salt, string $registrationDate, int $balance, bool $balancePrivacy, bool $avatar,
                                 ?string $birthday, ?string $location, ?string $bio, int $likes, int $comments,
                                 int $paidOrders, string $lastSeenTime, bool $lastSeenTimePrivacy) {
         parent::__construct($ID);
+        $this->activationStatus = $activationStatus;
+        $this->activationToken = $activationToken;
         $this->accessToken = $accessToken;
         $this->isAdministrator = $isAdmin;
         $this->isModerator = $contentCreator;

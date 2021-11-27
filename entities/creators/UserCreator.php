@@ -12,7 +12,7 @@ class UserCreator extends EntityCreator {
             die;
         }
         if ($r = $result->fetch(PDO::FETCH_ASSOC)) {
-            return new User($r['ID'], $r['accessToken'], $r['administrator'], $r['moderator'],
+            return new User($r['ID'], $r['activationStatus'], $r['activationToken'], $r['accessToken'], $r['administrator'], $r['moderator'],
                 $r['privacy'], $r['nickname'], $r['email'], $r['emailPrivacy'], $r['password'], $r['salt'],
                 $r['registrationDate'], $r['balance'], $r['balancePrivacy'], $r['avatar'], $r['birthday'],
                 $r['location'], $r['bio'], $r['likes'], $r['comments'], $r['paidOrders'], $r['lastSeenTime'],
@@ -31,7 +31,7 @@ class UserCreator extends EntityCreator {
         }
         $usersList = [];
         while ($r = $result->fetch(PDO::FETCH_ASSOC)) {
-            $usersList[] = new User($r['ID'], $r['accessToken'], $r['administrator'], $r['moderator'],
+            $usersList[] = new User($r['ID'], $r['activationStatus'], $r['activationToken'], $r['accessToken'], $r['administrator'], $r['moderator'],
                 $r['privacy'], $r['nickname'], $r['email'], $r['emailPrivacy'], $r['password'], $r['salt'],
                 $r['registrationDate'], $r['balance'], $r['balancePrivacy'], $r['avatar'], $r['birthday'],
                 $r['location'], $r['bio'], $r['likes'], $r['comments'], $r['paidOrders'], $r['lastSeenTime'],
