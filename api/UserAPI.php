@@ -168,6 +168,19 @@ class UserAPI extends API implements Retrievable, Creatable {
             die;
         }
 
+        $msg = "
+                <!DOCTYPE html>
+                <html lang='ru'>
+                    Премногоуважаемый(ая) <b>$nickname</b>.<br>
+                    Ваш токен активации $activationToken .
+                </html>";
+        $from = 'From: '. EMAIL . '\r\n';
+        if (!mail($email, 'Регистрация', $msg, $from)) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Email can\'t be sent']));
+            die;
+        }
+
         http_response_code(200);
         echo(json_encode(['response' => 'Sign Up successful']));
     }
