@@ -28,7 +28,7 @@ class User extends Entity {
     protected bool $lastSeenTimePrivacy;
 
     protected const TOKEN_LENGTH = 32;
-    public const TOKEN_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-#*';
+    public const TOKEN_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-';
 
     public const NICKNAME_MIN_LENGTH = 3;
     public const NICKNAME_MAX_LENGTH = 32;
@@ -43,7 +43,7 @@ class User extends Entity {
     public const PASSWORD_PATTERN = '~^(?=.*[0-9])[a-zA-Z0-9]+$~';
 
     public const SALT_LENGTH = 8;
-    public const SALT_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-#*';
+    public const SALT_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-';
 
 
     public static function validateNickname(string $nickname): array {
