@@ -78,7 +78,6 @@ class UserAPI extends API implements Retrievable {
 
         http_response_code(200);
         echo(json_encode(['response'=>$usersList]));
-        die;
     }
 
     public function getAll(): void {
@@ -118,7 +117,6 @@ class UserAPI extends API implements Retrievable {
 
         http_response_code(200);
         echo(json_encode(['response'=>$usersList]));
-        die;
     }
 
 }
