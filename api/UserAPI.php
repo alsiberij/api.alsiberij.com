@@ -31,6 +31,25 @@ class UserAPI extends API implements Retrievable, Creatable {
         }
     }
 
+    private function handleUserData(array &$user, bool $accessAllAvailableData): void {
+        unset($user['activationToken']);
+        unset($user['password']);
+        unset($user['salt']);
+        unset($user['accessToken']);
+        unset($user['isActivated']);
+        if (!$accessAllAvailableData) {
+            if (!$user['emailPrivacy']) {
+                $user['email'] = null;
+            }
+            if (!$user['balancePrivacy']) {
+                $user['balance'] = null;
+            }
+            if (!$user['lastSeenTimePrivacy']) {
+                $user['lastSeenTime'] = null;
+            }
+        }
+    }
+
     public function get(): void {
         $rawUserIDs = $_POST['userIDs'] ?? $_GET['userIDs'] ?? null;
         $userIDs = json_decode($rawUserIDs);
@@ -60,22 +79,7 @@ class UserAPI extends API implements Retrievable, Creatable {
                 $user = $user->toArray();
 
                 if ($accessAllData || ($user['activationStatus'] && $user['privacy'])) {
-                    unset($user['activationToken']);
-                    unset($user['password']);
-                    unset($user['salt']);
-                    unset($user['accessToken']);
-                    unset($user['isActivated']);
-                    if (!$accessAllData) {
-                        if (!$user['emailPrivacy']) {
-                            $user['email'] = null;
-                        }
-                        if (!$user['balancePrivacy']) {
-                            $user['balance'] = null;
-                        }
-                        if (!$user['lastSeenTimePrivacy']) {
-                            $user['lastSeenTime'] = null;
-                        }
-                    }
+                    $this->handleUserData($user, $accessAllData);
                     $usersList[] = $user;
                 }
             }
@@ -98,22 +102,7 @@ class UserAPI extends API implements Retrievable, Creatable {
             $user = $user->toArray();
 
             if ($accessAllData || ($user['activationStatus'] && $user['privacy'])) {
-                unset($user['activationToken']);
-                unset($user['password']);
-                unset($user['salt']);
-                unset($user['accessToken']);
-                unset($user['isActivated']);
-                if (!$accessAllData) {
-                    if (!$user['emailPrivacy']) {
-                        $user['email'] = null;
-                    }
-                    if (!$user['balancePrivacy']) {
-                        $user['balance'] = null;
-                    }
-                    if (!$user['lastSeenTimePrivacy']) {
-                        $user['lastSeenTime'] = null;
-                    }
-                }
+                $this->handleUserData($user, $accessAllData);
             } else {
                 $user = null;
             }
