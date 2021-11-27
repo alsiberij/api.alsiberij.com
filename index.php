@@ -3,6 +3,7 @@
 const ROOT = __DIR__ . '/';
 
 const TABLE_USER = 'users';
+const TABLE_ACTIVATION = 'activations';
 
 spl_autoload_register(function(string $className): void {
     $folders = [
