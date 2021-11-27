@@ -234,4 +234,16 @@ class User extends Entity {
         return $this->isModerator;
     }
 
+    public function getNickname(): string {
+        return $this->nickname;
+    }
+
+    public function getSalt(): string {
+        return $this->salt;
+    }
+
+    public function getEmail(): string {
+        return $this->email;
+    }
+
 }
