@@ -22,6 +22,11 @@ class UserAPI extends API implements Retrievable, Creatable {
                 $this->create();
                 return;
             }
+            case 'delete': {
+                $this->delete();
+                return;
+            }
+
 
             default: {
                 http_response_code(405);
@@ -171,6 +176,63 @@ class UserAPI extends API implements Retrievable, Creatable {
     }
 
     public function delete(): void {
+        if (!$this->authorizedUser) {
+            http_response_code(403);
+            echo(json_encode(['error' => 'Unauthorized']));
+            die;
+        }
 
+        $attempt = $_POST['attempt'] ?? $_GET['attempt'] ?? null;
+        if (!$attempt) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Missing parameter: attempt']));
+            die;
+        }
+
+        if ($attempt == 'request') {
+            $msg = '
+                <!DOCTYPE html>
+                <html lang=\'ru\'>
+                    Премногоуважаемый(ая) <b>' . $this->authorizedUser->getNickname() . '</b>.<br>
+                    Ваш токен удаления аккаунта ' . $this->authorizedUser->getDeletionToken() . ' .
+                </html>';
+            $from = 'From: '. EMAIL . '\r\n';
+            if (!mail($this->authorizedUser->getEmail(), 'Удаление аккаунта', $msg, $from)) {
+                http_response_code(500);
+                echo(json_encode(['error' => 'Email can\'t be sent']));
+                die;
+            }
+            http_response_code(200);
+            echo(json_encode(['response' => 'Success']));
+        } elseif ($attempt == 'process') {
+            $deleteToken = $_POST['deleteToken'] ?? $_GET['deleteToken'] ?? null;
+            if (!$deleteToken) {
+                http_response_code(400);
+                echo(json_encode(['error' => 'Missing parameter: deleteToken']));
+                die;
+            }
+            if ($this->authorizedUser->getDeletionToken() != $deleteToken) {
+                http_response_code(400);
+                echo(json_encode(['error' => 'Invalid delete token']));
+                die;
+            }
+            $query = 'DELETE FROM users WHERE ID = :ID';
+            $result = $this->db->prepare($query);
+            $userID = $this->authorizedUser->getID();
+            $result->bindParam(':ID', $userID);
+            if (!$result->execute()) {
+                http_response_code(500);
+                echo(json_encode(['error' => 'Query can not be executed']));
+                die;
+            }
+
+            http_response_code(200);
+            echo(json_encode(['response' => 'Success']));
+        } else {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Invalid parameter value: attempt should be `request` or `process`']));
+            die;
+        }
     }
+
 }
