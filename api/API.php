@@ -23,6 +23,8 @@ abstract class API {
                 echo(json_encode(['error'=>'Invalid access token']));
                 die;
             }
+        } else {
+            $this->authorizedUser = null;
         }
     }
 
