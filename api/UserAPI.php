@@ -1,7 +1,7 @@
 <?php
 
 
-class UserAPI extends API implements Retrievable {
+class UserAPI extends API implements Retrievable, Creatable {
 
     public function __construct() {
         parent::__construct();
@@ -18,6 +18,15 @@ class UserAPI extends API implements Retrievable {
                 $this->getAll();
                 return;
             }
+            case 'create': {
+                $this->create();
+                return;
+            }
+            case 'delete': {
+                $this->delete();
+                return;
+            }
+
 
             default: {
                 http_response_code(405);
@@ -27,8 +36,32 @@ class UserAPI extends API implements Retrievable {
         }
     }
 
+    private function handleUserData(array &$user, bool $accessAllAvailableData): void {
+        unset($user['activationToken']);
+        unset($user['password']);
+        unset($user['salt']);
+        unset($user['accessToken']);
+        unset($user['isActivated']);
+        if (!$accessAllAvailableData) {
+            if (!$user['emailPrivacy']) {
+                $user['email'] = null;
+            }
+            if (!$user['balancePrivacy']) {
+                $user['balance'] = null;
+            }
+            if (!$user['lastSeenTimePrivacy']) {
+                $user['lastSeenTime'] = null;
+            }
+        }
+    }
+
     public function get(): void {
         $rawUserIDs = $_POST['userIDs'] ?? $_GET['userIDs'] ?? null;
+        if (!$rawUserIDs) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Missing parameter: userIDs']));
+            die;
+        }
         $userIDs = json_decode($rawUserIDs);
         if (!$userIDs) {
             http_response_code(400);
@@ -55,22 +88,8 @@ class UserAPI extends API implements Retrievable {
 
                 $user = $user->toArray();
 
-                if ($accessAllData || $user['privacy']) {
-                    unset($user['password']);
-                    unset($user['salt']);
-                    unset($user['accessToken']);
-                    unset($user['isActivated']);
-                    if (!$accessAllData) {
-                        if (!$user['emailPrivacy']) {
-                            $user['email'] = null;
-                        }
-                        if (!$user['balancePrivacy']) {
-                            $user['balance'] = null;
-                        }
-                        if (!$user['lastSeenTimePrivacy']) {
-                            $user['lastSeenTime'] = null;
-                        }
-                    }
+                if ($accessAllData || ($user['activationStatus'] && $user['privacy'])) {
+                    $this->handleUserData($user, $accessAllData);
                     $usersList[] = $user;
                 }
             }
@@ -78,7 +97,6 @@ class UserAPI extends API implements Retrievable {
 
         http_response_code(200);
         echo(json_encode(['response'=>$usersList]));
-        die;
     }
 
     public function getAll(): void {
@@ -93,22 +111,8 @@ class UserAPI extends API implements Retrievable {
 
             $user = $user->toArray();
 
-            if ($accessAllData || $user['privacy']) {
-                unset($user['password']);
-                unset($user['salt']);
-                unset($user['accessToken']);
-                unset($user['isActivated']);
-                if (!$accessAllData) {
-                    if (!$user['emailPrivacy']) {
-                        $user['email'] = null;
-                    }
-                    if (!$user['balancePrivacy']) {
-                        $user['balance'] = null;
-                    }
-                    if (!$user['lastSeenTimePrivacy']) {
-                        $user['lastSeenTime'] = null;
-                    }
-                }
+            if ($accessAllData || ($user['activationStatus'] && $user['privacy'])) {
+                $this->handleUserData($user, $accessAllData);
             } else {
                 $user = null;
             }
@@ -118,7 +122,117 @@ class UserAPI extends API implements Retrievable {
 
         http_response_code(200);
         echo(json_encode(['response'=>$usersList]));
-        die;
+    }
+
+    public function create(): void {
+        $nickname = $_POST['nickname'] ?? $_GET['nickname'] ?? '';
+        $email = $_POST['email'] ?? $_GET['email'] ?? '';
+        $password = $_POST['password'] ?? $_GET['password'] ?? '';
+
+        $nicknameErrors = User::validateNickname($nickname);
+        $emailErrors = User::validateEmail($email);
+        $passwordErrors = User::validatePassword($password);
+
+        $errors = array_merge($nicknameErrors, $emailErrors, $passwordErrors);
+        if (!empty($errors)) {
+            http_response_code(400);
+            echo(json_encode(['errors'=>$errors]));
+            die;
+        }
+
+        $salt = User::generateSalt();
+        $saltMD5 = md5($salt);
+        $password = md5(substr($saltMD5, 0, 16) . $password . substr($saltMD5, 16, 16));
+
+        $query = 'INSERT INTO users (activationToken, nickname, email, password, salt) VALUES (:token, :nickname, :email, :password, :salt);';
+        $result = $this->db->prepare($query);
+        $activationToken = User::generateToken();
+        $result->bindParam(':token', $activationToken);
+        $result->bindParam(':nickname', $nickname);
+        $result->bindParam(':email', $email);
+        $result->bindParam(':password', $password);
+        $result->bindParam(':salt', $salt);
+        if (!$result->execute()) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Query can not be executed']));
+            die;
+        }
+
+        $msg = "
+                <!DOCTYPE html>
+                <html lang='ru'>
+                    Премногоуважаемый(ая) <b>$nickname</b>.<br>
+                    Ваш токен активации аккаунта $activationToken .
+                </html>";
+        $from = 'From: '. EMAIL . '\r\n';
+        if (!mail($email, 'Регистрация', $msg, $from)) {
+            http_response_code(500);
+            echo(json_encode(['error' => 'Email can\'t be sent']));
+            die;
+        }
+
+        http_response_code(200);
+        echo(json_encode(['response' => 'Success']));
+    }
+
+    public function delete(): void {
+        if (!$this->authorizedUser) {
+            http_response_code(403);
+            echo(json_encode(['error' => 'Unauthorized']));
+            die;
+        }
+
+        $attempt = $_POST['attempt'] ?? $_GET['attempt'] ?? null;
+        if (!$attempt) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Missing parameter: attempt']));
+            die;
+        }
+
+        if ($attempt == 'request') {
+            $msg = '
+                <!DOCTYPE html>
+                <html lang=\'ru\'>
+                    Премногоуважаемый(ая) <b>' . $this->authorizedUser->getNickname() . '</b>.<br>
+                    Ваш токен удаления аккаунта ' . $this->authorizedUser->getDeletionToken() . ' .
+                </html>';
+            $from = 'From: '. EMAIL . '\r\n';
+            if (!mail($this->authorizedUser->getEmail(), 'Удаление аккаунта', $msg, $from)) {
+                http_response_code(500);
+                echo(json_encode(['error' => 'Email can\'t be sent']));
+                die;
+            }
+            http_response_code(200);
+            echo(json_encode(['response' => 'Success']));
+        } elseif ($attempt == 'process') {
+            $deleteToken = $_POST['deleteToken'] ?? $_GET['deleteToken'] ?? null;
+            if (!$deleteToken) {
+                http_response_code(400);
+                echo(json_encode(['error' => 'Missing parameter: deleteToken']));
+                die;
+            }
+            if ($this->authorizedUser->getDeletionToken() != $deleteToken) {
+                http_response_code(400);
+                echo(json_encode(['error' => 'Invalid delete token']));
+                die;
+            }
+            $query = 'DELETE FROM users WHERE ID = :ID';
+            $result = $this->db->prepare($query);
+            $userID = $this->authorizedUser->getID();
+            $result->bindParam(':ID', $userID);
+            if (!$result->execute()) {
+                http_response_code(500);
+                echo(json_encode(['error' => 'Query can not be executed']));
+                die;
+            }
+
+            http_response_code(200);
+            echo(json_encode(['response' => 'Success']));
+        } else {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Invalid parameter value: attempt should be `request` or `process`']));
+            die;
+        }
     }
 
 }

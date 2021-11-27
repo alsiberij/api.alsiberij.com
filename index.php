@@ -1,8 +1,10 @@
 <?php
 
 const ROOT = __DIR__ . '/';
+const EMAIL = 'ceo@alsiberij.com';
 
 const TABLE_USER = 'users';
+const TABLE_ACTIVATION = 'activations';
 
 spl_autoload_register(function(string $className): void {
     $folders = [
@@ -39,7 +41,7 @@ if (isset($_POST['session']) || isset($_GET['session'])) {
 $entityAndMethod = explode('/', trim(explode('?', $_SERVER['REQUEST_URI'])[0], '/'));
 if (count($entityAndMethod) != 2) {
     http_response_code(400);
-    echo(json_encode(['error' => 'Invalid request. Try entity/method?params pattern']));
+    echo(json_encode(['error' => 'Invalid request. Try entity/method?params pattern'], JSON_UNESCAPED_SLASHES));
     die;
 }
 
