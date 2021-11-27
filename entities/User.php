@@ -188,6 +188,8 @@ class User extends Entity {
     public function toArray(): array {
         return array_merge(parent::toArray(), [
             'ID' => $this->ID,
+            'activationStatus' => $this->activationStatus,
+            'activationToken' => $this->activationToken,
             'accessToken' => $this->accessToken,
             'isAdministrator' => $this->isAdministrator,
             'isModerator' => $this->isModerator,
