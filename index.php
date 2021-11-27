@@ -1,6 +1,7 @@
 <?php
 
 const ROOT = __DIR__ . '/';
+const EMAIL = 'ceo@alsiberij.com';
 
 const TABLE_USER = 'users';
 const TABLE_ACTIVATION = 'activations';
