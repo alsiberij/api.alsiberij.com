@@ -3,7 +3,6 @@
 
 class User extends Entity {
 
-    protected bool $isActivated;
     protected ?string $accessToken;
     protected bool $isAdministrator;
     protected bool $isModerator;
@@ -26,13 +25,12 @@ class User extends Entity {
     protected DateTime $lastSeenTime;
     protected bool $lastSeenTimePrivacy;
 
-    public function __construct(int $ID, bool $isActivated, ?string $accessToken, bool $isAdmin, bool $contentCreator,
+    public function __construct(int $ID, ?string $accessToken, bool $isAdmin, bool $contentCreator,
                                 bool $privacy, string $nickname, string $email, bool $emailPrivacy, string $password,
                                 string $salt, string $registrationDate, int $balance, bool $balancePrivacy, bool $avatar,
                                 ?string $birthday, ?string $location, ?string $bio, int $likes, int $comments,
                                 int $paidOrders, string $lastSeenTime, bool $lastSeenTimePrivacy) {
         parent::__construct($ID);
-        $this->isActivated = $isActivated;
         $this->accessToken = $accessToken;
         $this->isAdministrator = $isAdmin;
         $this->isModerator = $contentCreator;
@@ -75,7 +73,6 @@ class User extends Entity {
     public function toArray(): array {
         return array_merge(parent::toArray(), [
             'ID' => $this->ID,
-            'isActivated' => $this->isActivated,
             'accessToken' => $this->accessToken,
             'isAdministrator' => $this->isAdministrator,
             'isModerator' => $this->isModerator,
