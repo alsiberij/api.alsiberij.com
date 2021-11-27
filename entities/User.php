@@ -246,4 +246,8 @@ class User extends Entity {
         return $this->email;
     }
 
+    public function isActivated(): bool {
+        return $this->isActivated;
+    }
+
 }
