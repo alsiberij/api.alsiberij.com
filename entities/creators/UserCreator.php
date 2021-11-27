@@ -12,8 +12,9 @@ class UserCreator extends EntityCreator {
     }
 
     public function newInstanceByAccessToken(string $accessToken) {
+        $tokenHash = md5($accessToken) . md5(md5($accessToken));
         $result = $this->db->prepare('SELECT * FROM ' . TABLE_USER . ' WHERE accessToken = :token');
-        $result->bindParam(':token', $accessToken);
+        $result->bindParam(':token', $tokenHash);
         if (!$result->execute()) {
             http_response_code(500);
             echo(json_encode(['error'=>'Internal DB error']));

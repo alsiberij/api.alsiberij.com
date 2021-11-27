@@ -17,8 +17,7 @@ abstract class API {
                 die;
             }
         } elseif($accessToken = $_POST['accessToken'] ?? $_GET['accessToken'] ?? null) {
-            $tokenHash = md5($accessToken) . md5(md5($accessToken));
-            if (!($this->authorizedUser = (new UserCreator())->newInstanceByAccessToken($tokenHash))) {
+            if (!($this->authorizedUser = (new UserCreator())->newInstanceByAccessToken($accessToken))) {
                 http_response_code(403);
                 echo(json_encode(['error'=>'Invalid access token']));
                 die;
