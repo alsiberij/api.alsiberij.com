@@ -59,7 +59,8 @@ class UserAPI extends API implements Retrievable, Creatable {
 
                 $user = $user->toArray();
 
-                if ($accessAllData || $user['privacy']) {
+                if ($accessAllData || ($user['activationStatus'] && $user['privacy'])) {
+                    unset($user['activationToken']);
                     unset($user['password']);
                     unset($user['salt']);
                     unset($user['accessToken']);
@@ -96,7 +97,8 @@ class UserAPI extends API implements Retrievable, Creatable {
 
             $user = $user->toArray();
 
-            if ($accessAllData || $user['privacy']) {
+            if ($accessAllData || ($user['activationStatus'] && $user['privacy'])) {
+                unset($user['activationToken']);
                 unset($user['password']);
                 unset($user['salt']);
                 unset($user['accessToken']);
