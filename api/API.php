@@ -25,6 +25,11 @@ abstract class API {
         } else {
             $this->authorizedUser = null;
         }
+        if ($this->authorizedUser && !$this->authorizedUser->isActivated()) {
+            http_response_code(403);
+            echo(json_encode(['error'=>'Activate your account to use API']));
+            die;
+        }
     }
 
     public abstract function respond(string $methodName): void;
