@@ -3,7 +3,7 @@
 
 class User extends Entity {
 
-    protected bool $activationStatus;
+    protected bool $isActivated;
     protected string $activationToken;
     protected ?string $accessToken;
     protected bool $isAdministrator;
@@ -138,13 +138,13 @@ class User extends Entity {
     }
 
 
-    public function __construct(int $ID, bool $activationStatus, string $activationToken, ?string $accessToken, bool $isAdmin, bool $contentCreator,
+    public function __construct(int $ID, bool $isActivated, string $activationToken, ?string $accessToken, bool $isAdmin, bool $contentCreator,
                                 bool $privacy, string $nickname, string $email, bool $emailPrivacy, string $password,
                                 string $salt, string $registrationDate, int $balance, bool $balancePrivacy, bool $avatar,
                                 ?string $birthday, ?string $location, ?string $bio, int $likes, int $comments,
                                 int $paidOrders, string $lastSeenTime, bool $lastSeenTimePrivacy) {
         parent::__construct($ID);
-        $this->activationStatus = $activationStatus;
+        $this->isActivated = $isActivated;
         $this->activationToken = $activationToken;
         $this->accessToken = $accessToken;
         $this->isAdministrator = $isAdmin;
@@ -188,7 +188,7 @@ class User extends Entity {
     public function toArray(): array {
         return array_merge(parent::toArray(), [
             'ID' => $this->ID,
-            'activationStatus' => $this->activationStatus,
+            'activationStatus' => $this->isActivated,
             'activationToken' => $this->activationToken,
             'accessToken' => $this->accessToken,
             'isAdministrator' => $this->isAdministrator,
