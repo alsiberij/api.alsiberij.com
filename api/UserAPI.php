@@ -52,6 +52,11 @@ class UserAPI extends API implements Retrievable, Creatable {
 
     public function get(): void {
         $rawUserIDs = $_POST['userIDs'] ?? $_GET['userIDs'] ?? null;
+        if (!$rawUserIDs) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Missing parameter: userIDs']));
+            die;
+        }
         $userIDs = json_decode($rawUserIDs);
         if (!$userIDs) {
             http_response_code(400);
@@ -152,7 +157,7 @@ class UserAPI extends API implements Retrievable, Creatable {
                 <!DOCTYPE html>
                 <html lang='ru'>
                     Премногоуважаемый(ая) <b>$nickname</b>.<br>
-                    Ваш токен активации $activationToken .
+                    Ваш токен активации аккаунта $activationToken .
                 </html>";
         $from = 'From: '. EMAIL . '\r\n';
         if (!mail($email, 'Регистрация', $msg, $from)) {
