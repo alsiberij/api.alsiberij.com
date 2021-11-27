@@ -11,7 +11,7 @@ class UserCreator extends EntityCreator {
             $row['comments'], $row['paidOrders'], $row['lastSeenTime'], $row['lastSeenTimePrivacy']);
     }
 
-    public function newInstanceByAccessToken(string $accessToken) {
+    public function newInstanceByAccessToken(string $accessToken): ?User {
         $tokenHash = md5($accessToken) . md5(md5($accessToken));
         $result = $this->db->prepare('SELECT * FROM ' . TABLE_USER . ' WHERE accessToken = :token');
         $result->bindParam(':token', $tokenHash);
