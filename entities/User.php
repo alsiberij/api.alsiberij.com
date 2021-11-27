@@ -242,6 +242,10 @@ class User extends Entity {
         return $this->salt;
     }
 
+    public function getDeletionToken(): string {
+        return substr(md5('DELETE' . $this->salt . 'DELETE'), 8, 16);
+    }
+
     public function getEmail(): string {
         return $this->email;
     }
