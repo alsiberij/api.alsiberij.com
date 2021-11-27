@@ -3,6 +3,14 @@
 
 class UserCreator extends EntityCreator {
 
+    protected function constructObject(array $row): User {
+        return new User($row['ID'], $row['activationStatus'], $row['activationToken'], $row['accessToken'],
+            $row['administrator'], $row['moderator'], $row['privacy'], $row['nickname'], $row['email'],
+            $row['emailPrivacy'], $row['password'], $row['salt'], $row['registrationDate'], $row['balance'],
+            $row['balancePrivacy'], $row['avatar'], $row['birthday'], $row['location'], $row['bio'], $row['likes'],
+            $row['comments'], $row['paidOrders'], $row['lastSeenTime'], $row['lastSeenTimePrivacy']);
+    }
+
     public function newInstance(int $ID): ?User {
         $result = $this->db->prepare('SELECT * FROM ' . TABLE_USER . ' WHERE ID = :ID');
         $result->bindParam(':ID', $ID, PDO::PARAM_INT);
@@ -12,11 +20,7 @@ class UserCreator extends EntityCreator {
             die;
         }
         if ($r = $result->fetch(PDO::FETCH_ASSOC)) {
-            return new User($r['ID'], $r['activationStatus'], $r['activationToken'], $r['accessToken'], $r['administrator'], $r['moderator'],
-                $r['privacy'], $r['nickname'], $r['email'], $r['emailPrivacy'], $r['password'], $r['salt'],
-                $r['registrationDate'], $r['balance'], $r['balancePrivacy'], $r['avatar'], $r['birthday'],
-                $r['location'], $r['bio'], $r['likes'], $r['comments'], $r['paidOrders'], $r['lastSeenTime'],
-                $r['lastSeenTimePrivacy']);
+            return $this->constructObject($r);
         } else {
             return null;
         }
@@ -31,11 +35,7 @@ class UserCreator extends EntityCreator {
         }
         $usersList = [];
         while ($r = $result->fetch(PDO::FETCH_ASSOC)) {
-            $usersList[] = new User($r['ID'], $r['activationStatus'], $r['activationToken'], $r['accessToken'], $r['administrator'], $r['moderator'],
-                $r['privacy'], $r['nickname'], $r['email'], $r['emailPrivacy'], $r['password'], $r['salt'],
-                $r['registrationDate'], $r['balance'], $r['balancePrivacy'], $r['avatar'], $r['birthday'],
-                $r['location'], $r['bio'], $r['likes'], $r['comments'], $r['paidOrders'], $r['lastSeenTime'],
-                $r['lastSeenTimePrivacy']);
+            $usersList[] = $this->constructObject($r);
         }
         return $usersList;
     }
