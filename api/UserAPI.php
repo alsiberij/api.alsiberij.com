@@ -1,7 +1,7 @@
 <?php
 
 
-class UserAPI extends API implements Retrievable, Creatable, Activatable {
+class UserAPI extends API implements Retrievable, Creatable, Activatable, Authenticatable {
 
     public function __construct() {
         parent::__construct();
@@ -28,6 +28,10 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable {
             }
             case 'activate': {
                 $this->activate();
+                return;
+            }
+            case 'auth': {
+                $this->authenticate();
                 return;
             }
 
@@ -267,6 +271,39 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable {
                 http_response_code(200);
                 echo(json_encode(['response' => 'Success']));
             }
+        }
+    }
+
+    public function authenticate(): void {
+        $email = $_POST['email'] ?? $_GET['email'] ?? null;
+        $password = $_POST['password'] ?? $_GET['password'] ?? null;
+
+        if (!$email || !$password) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Missing parameters: email or password']));
+            die;
+        }
+        if (!empty(User::validateEmail($email, false)) || !empty(User::validatePassword($password))) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Invalid parameters: email or password']));
+            die;
+        }
+
+        $user = $this->creator->newInstanceByEmail($email);
+        if ($user) {
+            $passedPasswordHash = User::generatePasswordHash($password, $user->getSalt());
+            $success = $user->getPassword() == $passedPasswordHash;
+        } else {
+            $success = false;
+        }
+
+        http_response_code(200);
+        if (!$success) {
+            echo(json_encode(['response' => new StdClass]));
+        } else {
+            $user = $user->toArray();
+            $this->handleUserData($user, true);
+            echo(json_encode(['response' => $user]));
         }
     }
 
