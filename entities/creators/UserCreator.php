@@ -27,6 +27,21 @@ class UserCreator extends EntityCreator {
         }
     }
 
+    public function newInstanceByEmail(string $email): ?User {
+        $result = $this->db->prepare('SELECT * FROM ' . TABLE_USER . ' WHERE email = :email');
+        $result->bindParam(':email', $email);
+        if (!$result->execute()) {
+            http_response_code(500);
+            echo(json_encode(['error'=>'Internal DB error']));
+            die;
+        }
+        if ($r = $result->fetch(PDO::FETCH_ASSOC)) {
+            return $this->constructObject($r);
+        } else {
+            return null;
+        }
+    }
+
     public function newInstance(int $ID): ?User {
         $result = $this->db->prepare('SELECT * FROM ' . TABLE_USER . ' WHERE ID = :ID');
         $result->bindParam(':ID', $ID, PDO::PARAM_INT);
