@@ -11,9 +11,10 @@ class UserCreator extends EntityCreator {
             $row['comments'], $row['paidOrders'], $row['lastSeenTime'], $row['lastSeenTimePrivacy']);
     }
 
-    public function newInstanceByAccessToken(string $accessToken): ?User {
-        $tokenHash = User::calculateAccessTokenHash($accessToken);
-        $result = $this->db->prepare('SELECT * FROM ' . TABLE_USER . ' WHERE accessToken = :token');
+    public function newInstanceByToken(string $token, bool $isActivationToken): ?User {
+        $tokenHash = $isActivationToken ? User::calculateActivationTokenHash($token) : User::calculateAccessTokenHash($token);
+        $query = 'SELECT * FROM ' . TABLE_USER . ' WHERE ' . ($isActivationToken ? 'activationToken' : 'accessToken') . ' = :token';
+        $result = $this->db->prepare($query);
         $result->bindParam(':token', $tokenHash);
         if (!$result->execute()) {
             http_response_code(500);
