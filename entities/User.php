@@ -87,6 +87,11 @@ class User extends Entity {
         return $errors;
     }
 
+    public static function generatePasswordHash(string $password, string $salt): string {
+        $saltMD5 = md5($salt);
+        return md5(substr($saltMD5, 0, 16) . $password . substr($saltMD5, 16, 16));
+    }
+
     private static function validateSalt(string $salt): bool {
         $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE salt = :salt');
         $result->bindParam(':salt', $salt);

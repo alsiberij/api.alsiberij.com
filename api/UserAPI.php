@@ -141,8 +141,7 @@ class UserAPI extends API implements Retrievable, Creatable {
         }
 
         $salt = User::generateSalt();
-        $saltMD5 = md5($salt);
-        $password = md5(substr($saltMD5, 0, 16) . $password . substr($saltMD5, 16, 16));
+        $password = User::generatePasswordHash($password, $salt);
 
         $query = 'INSERT INTO users (activationToken, nickname, email, password, salt) VALUES (:token, :nickname, :email, :password, :salt);';
         $result = $this->db->prepare($query);
