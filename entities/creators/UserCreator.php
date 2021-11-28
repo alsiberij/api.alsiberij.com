@@ -4,15 +4,15 @@
 class UserCreator extends EntityCreator {
 
     protected function constructObject(array $row): User {
-        return new User($row['ID'], $row['activationStatus'], $row['activationToken'], $row['accessToken'],
+        return new User($row['ID'], $row['activationStatus'], $row['activationTokenHash'], $row['accessTokenHash'],
             $row['administrator'], $row['moderator'], $row['privacy'], $row['nickname'], $row['email'],
-            $row['emailPrivacy'], $row['password'], $row['salt'], $row['registrationDate'], $row['balance'],
+            $row['emailPrivacy'], $row['passwordHash'], $row['salt'], $row['registrationDate'], $row['balance'],
             $row['balancePrivacy'], $row['avatar'], $row['birthday'], $row['location'], $row['bio'], $row['likes'],
             $row['comments'], $row['paidOrders'], $row['lastSeenTime'], $row['lastSeenTimePrivacy']);
     }
 
     public function newInstanceByToken(string $tokenHash, bool $isActivationToken): ?User {
-        $query = 'SELECT * FROM ' . TABLE_USER . ' WHERE ' . ($isActivationToken ? 'activationToken' : 'accessToken') . ' = :token';
+        $query = 'SELECT * FROM ' . TABLE_USER . ' WHERE ' . ($isActivationToken ? 'activationTokenHash' : 'accessTokenHash') . ' = :token';
         $result = $this->db->prepare($query);
         $result->bindParam(':token', $tokenHash);
         if (!$result->execute()) {

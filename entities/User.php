@@ -4,15 +4,15 @@
 class User extends Entity {
 
     protected bool $isActivated;
-    protected string $activationToken;
-    protected ?string $accessToken;
+    protected string $activationTokenHash;
+    protected ?string $accessTokenHash;
     protected bool $isAdministrator;
     protected bool $isModerator;
     protected bool $privacy;
     protected string $nickname;
     protected string $email;
     protected bool $emailPrivacy;
-    protected string $password;
+    protected string $passwordHash;
     protected string $salt;
     protected DateTime $registrationDate;
     protected int $balance;
@@ -119,7 +119,7 @@ class User extends Entity {
 
     private static function validateActivationToken(string $token): bool {
         $tokenHash = self::calculateActivationTokenHash($token);
-        $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE activationToken = :token');
+        $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE activationTokenHash = :token');
         $result->bindParam(':token', $tokenHash);
         if (!$result->execute()) {
             http_response_code(500);
@@ -152,22 +152,23 @@ class User extends Entity {
         return md5($accessToken) . md5(md5($accessToken));
     }
 
-    public function __construct(int $ID, bool $isActivated, string $activationToken, ?string $accessToken, bool $isAdmin, bool $contentCreator,
-                                bool $privacy, string $nickname, string $email, bool $emailPrivacy, string $password,
-                                string $salt, string $registrationDate, int $balance, bool $balancePrivacy, bool $avatar,
-                                ?string $birthday, ?string $location, ?string $bio, int $likes, int $comments,
-                                int $paidOrders, string $lastSeenTime, bool $lastSeenTimePrivacy) {
+    public function __construct(int $ID, bool $isActivated, string $activationTokenHash, ?string $accessTokenHash,
+                                bool $isAdmin, bool $contentCreator, bool $privacy, string $nickname, string $email,
+                                bool $emailPrivacy, string $passwordHash, string  $salt, string $registrationDate,
+                                int $balance, bool $balancePrivacy, bool $avatar, ?string $birthday, ?string $location,
+                                ?string $bio, int $likes, int $comments, int $paidOrders, string $lastSeenTime,
+                                bool $lastSeenTimePrivacy) {
         parent::__construct($ID);
         $this->isActivated = $isActivated;
-        $this->activationToken = $activationToken;
-        $this->accessToken = $accessToken;
+        $this->activationTokenHash = $activationTokenHash;
+        $this->accessTokenHash = $accessTokenHash;
         $this->isAdministrator = $isAdmin;
         $this->isModerator = $contentCreator;
         $this->privacy = $privacy;
         $this->nickname = $nickname;
         $this->email = $email;
         $this->emailPrivacy = $emailPrivacy;
-        $this->password = $password;
+        $this->passwordHash = $passwordHash;
         $this->salt = $salt;
         try {
             $this->registrationDate = new DateTime($registrationDate);
@@ -203,15 +204,15 @@ class User extends Entity {
         return array_merge(parent::toArray(), [
             'ID' => $this->ID,
             'activationStatus' => $this->isActivated,
-            'activationToken' => $this->activationToken,
-            'accessToken' => $this->accessToken,
+            'activationTokenHash' => $this->activationTokenHash,
+            'accessTokenHash' => $this->accessTokenHash,
             'isAdministrator' => $this->isAdministrator,
             'isModerator' => $this->isModerator,
             'privacy' => $this->privacy,
             'nickname' => $this->nickname,
             'email' => $this->email,
             'emailPrivacy' => $this->emailPrivacy,
-            'password' => $this->password,
+            'passwordHash' => $this->passwordHash,
             'salt' => $this->salt,
             'registrationDate' => $this->registrationDate->format('Y.m.d H:i:s'),
             'balance' => $this->balance,
@@ -280,8 +281,8 @@ class User extends Entity {
         }
     }
 
-    public function getPassword(): string {
-        return $this->password;
+    public function getPasswordHash(): string {
+        return $this->passwordHash;
     }
 
 }

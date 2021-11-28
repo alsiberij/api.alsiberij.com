@@ -45,10 +45,10 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
     }
 
     private function handleUserData(array &$user, bool $accessAllAvailableData): void {
-        unset($user['activationToken']);
-        unset($user['password']);
+        unset($user['activationTokenHash']);
+        unset($user['passwordHash']);
         unset($user['salt']);
-        unset($user['accessToken']);
+        unset($user['accessTokenHash']);
         unset($user['isActivated']);
         if (!$accessAllAvailableData) {
             if (!$user['emailPrivacy']) {
@@ -149,16 +149,16 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
         }
 
         $salt = User::generateSalt();
-        $password = User::generatePasswordHash($password, $salt);
+        $passwordHash = User::generatePasswordHash($password, $salt);
 
-        $query = 'INSERT INTO users (activationToken, nickname, email, password, salt) VALUES (:token, :nickname, :email, :password, :salt);';
+        $query = 'INSERT INTO users (activationTokenHash, nickname, email, passwordHash, salt) VALUES (:token, :nickname, :email, :password, :salt);';
         $result = $this->db->prepare($query);
         $activationToken = User::generateActivationToken();
         $activationTokenHash = User::calculateActivationTokenHash($activationToken);
         $result->bindParam(':token', $activationTokenHash);
         $result->bindParam(':nickname', $nickname);
         $result->bindParam(':email', $email);
-        $result->bindParam(':password', $password);
+        $result->bindParam(':password', $passwordHash);
         $result->bindParam(':salt', $salt);
         if (!$result->execute()) {
             http_response_code(400);
@@ -292,7 +292,7 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
         $user = $this->creator->newInstanceByEmail($email);
         if ($user) {
             $passedPasswordHash = User::generatePasswordHash($password, $user->getSalt());
-            $success = $user->getPassword() == $passedPasswordHash;
+            $success = $user->getPasswordHash() == $passedPasswordHash;
         } else {
             $success = false;
         }
