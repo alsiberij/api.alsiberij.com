@@ -1,7 +1,7 @@
 <?php
 
 
-class UserAPI extends API implements Retrievable, Creatable {
+class UserAPI extends API implements Retrievable, Creatable, Activatable, Authenticatable {
 
     public function __construct() {
         parent::__construct();
@@ -24,6 +24,14 @@ class UserAPI extends API implements Retrievable, Creatable {
             }
             case 'delete': {
                 $this->delete();
+                return;
+            }
+            case 'activate': {
+                $this->activate();
+                return;
+            }
+            case 'auth': {
+                $this->authenticate();
                 return;
             }
 
@@ -130,7 +138,7 @@ class UserAPI extends API implements Retrievable, Creatable {
         $password = $_POST['password'] ?? $_GET['password'] ?? '';
 
         $nicknameErrors = User::validateNickname($nickname);
-        $emailErrors = User::validateEmail($email);
+        $emailErrors = User::validateEmail($email, true);
         $passwordErrors = User::validatePassword($password);
 
         $errors = array_merge($nicknameErrors, $emailErrors, $passwordErrors);
@@ -141,13 +149,13 @@ class UserAPI extends API implements Retrievable, Creatable {
         }
 
         $salt = User::generateSalt();
-        $saltMD5 = md5($salt);
-        $password = md5(substr($saltMD5, 0, 16) . $password . substr($saltMD5, 16, 16));
+        $password = User::generatePasswordHash($password, $salt);
 
         $query = 'INSERT INTO users (activationToken, nickname, email, password, salt) VALUES (:token, :nickname, :email, :password, :salt);';
         $result = $this->db->prepare($query);
-        $activationToken = User::generateToken();
-        $result->bindParam(':token', $activationToken);
+        $activationToken = User::generateActivationToken();
+        $activationTokenHash = User::calculateActivationTokenHash($activationToken);
+        $result->bindParam(':token', $activationTokenHash);
         $result->bindParam(':nickname', $nickname);
         $result->bindParam(':email', $email);
         $result->bindParam(':password', $password);
@@ -232,6 +240,70 @@ class UserAPI extends API implements Retrievable, Creatable {
             http_response_code(400);
             echo(json_encode(['error' => 'Invalid parameter value: attempt should be `request` or `process`']));
             die;
+        }
+    }
+
+    public function activate(): void {
+        $activationToken = $_POST['activationToken'] ?? $_GET['activationToken'] ?? null;
+        if (!$activationToken) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Missing parameter: activationToken']));
+            die;
+        }
+        $tokenHash = User::calculateActivationTokenHash($activationToken);
+        $user = $this->creator->newInstanceByToken($tokenHash, true);
+        if (!$user) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Invalid activation token']));
+            die;
+        }
+
+        if ($user->isActivated()) {
+            http_response_code(200);
+            echo(json_encode(['response' => 'Already activated']));
+        } else {
+            $success = $user->activate();
+            if (!$success) {
+                http_response_code(500);
+                echo(json_encode(['error' => 'Query can not be executed']));
+                die;
+            } else {
+                http_response_code(200);
+                echo(json_encode(['response' => 'Success']));
+            }
+        }
+    }
+
+    public function authenticate(): void {
+        $email = $_POST['email'] ?? $_GET['email'] ?? null;
+        $password = $_POST['password'] ?? $_GET['password'] ?? null;
+
+        if (!$email || !$password) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Missing parameters: email or password']));
+            die;
+        }
+        if (!empty(User::validateEmail($email, false)) || !empty(User::validatePassword($password))) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Invalid parameters: email or password']));
+            die;
+        }
+
+        $user = $this->creator->newInstanceByEmail($email);
+        if ($user) {
+            $passedPasswordHash = User::generatePasswordHash($password, $user->getSalt());
+            $success = $user->getPassword() == $passedPasswordHash;
+        } else {
+            $success = false;
+        }
+
+        http_response_code(200);
+        if (!$success) {
+            echo(json_encode(['response' => new StdClass]));
+        } else {
+            $user = $user->toArray();
+            $this->handleUserData($user, true);
+            echo(json_encode(['response' => $user]));
         }
     }
 

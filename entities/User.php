@@ -56,13 +56,13 @@ class User extends Entity {
         return $errors;
     }
 
-    public static function validateEmail(string $email): array {
+    public static function validateEmail(string $email, bool $checkExistence): array {
         $errors = [];
         if (mb_strlen($email) < self::EMAIL_MIN_LENGTH || mb_strlen($email > self::EMAIL_MAX_LENGTH)) {
             $errors['email'] = 'Invalid length. Allowed length '. self::EMAIL_MIN_LENGTH . '-' . self::EMAIL_MAX_LENGTH;
         } elseif (!preg_match(self::EMAIL_PATTERN, $email)) {
             $errors['email'] = 'Invalid email';
-        } else {
+        } elseif ($checkExistence) {
             $result = DB::getConnection()->prepare('SELECT ID FROM ' . TABLE_USER . ' WHERE email = :email');
             $result->bindParam(':email', $email);
             if (!$result->execute()) {
@@ -85,6 +85,11 @@ class User extends Entity {
             $errors['password'] = 'Invalid password. Password should have at least 1 letter and 1 digit';
         }
         return $errors;
+    }
+
+    public static function generatePasswordHash(string $password, string $salt): string {
+        $saltMD5 = md5($salt);
+        return md5(substr($saltMD5, 0, 16) . $password . substr($saltMD5, 16, 16));
     }
 
     private static function validateSalt(string $salt): bool {
@@ -112,9 +117,10 @@ class User extends Entity {
         return $salt;
     }
 
-    private static function validateToken(string $token): bool {
+    private static function validateActivationToken(string $token): bool {
+        $tokenHash = self::calculateActivationTokenHash($token);
         $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE activationToken = :token');
-        $result->bindParam(':token', $token);
+        $result->bindParam(':token', $tokenHash);
         if (!$result->execute()) {
             http_response_code(500);
             echo(json_encode(['error' => 'Query can not be executed']));
@@ -127,16 +133,24 @@ class User extends Entity {
         }
     }
 
-    public static function generateToken(): string {
+    public static function generateActivationToken(): string {
         do {
             $token = '';
             for ($i = 0; $i < self::TOKEN_LENGTH; $i++) {
                 $token .= self::TOKEN_ALPHABET[rand(0, mb_strlen(self::TOKEN_ALPHABET) - 1)];
             }
-        } while (!self::validateToken($token));
+        } while (!self::validateActivationToken($token));
         return $token;
     }
 
+    public static function calculateActivationTokenHash(string $activationToken): string {
+        $tokenMD5 = md5($activationToken);
+        return md5(substr($tokenMD5, 0, 16) . $activationToken . substr($tokenMD5, 16, 16));
+    }
+
+    public static function calculateAccessTokenHash(string $accessToken): string {
+        return md5($accessToken) . md5(md5($accessToken));
+    }
 
     public function __construct(int $ID, bool $isActivated, string $activationToken, ?string $accessToken, bool $isAdmin, bool $contentCreator,
                                 bool $privacy, string $nickname, string $email, bool $emailPrivacy, string $password,
@@ -252,6 +266,22 @@ class User extends Entity {
 
     public function isActivated(): bool {
         return $this->isActivated;
+    }
+
+    public function activate(): bool {
+        if (!$this->isActivated) {
+            if ($this->db->query('UPDATE ' . TABLE_USER . ' SET activationStatus = 1 WHERE ID = ' . $this->ID)) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return true;
+        }
+    }
+
+    public function getPassword(): string {
+        return $this->password;
     }
 
 }

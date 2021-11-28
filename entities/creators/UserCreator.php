@@ -11,10 +11,25 @@ class UserCreator extends EntityCreator {
             $row['comments'], $row['paidOrders'], $row['lastSeenTime'], $row['lastSeenTimePrivacy']);
     }
 
-    public function newInstanceByAccessToken(string $accessToken): ?User {
-        $tokenHash = md5($accessToken) . md5(md5($accessToken));
-        $result = $this->db->prepare('SELECT * FROM ' . TABLE_USER . ' WHERE accessToken = :token');
+    public function newInstanceByToken(string $tokenHash, bool $isActivationToken): ?User {
+        $query = 'SELECT * FROM ' . TABLE_USER . ' WHERE ' . ($isActivationToken ? 'activationToken' : 'accessToken') . ' = :token';
+        $result = $this->db->prepare($query);
         $result->bindParam(':token', $tokenHash);
+        if (!$result->execute()) {
+            http_response_code(500);
+            echo(json_encode(['error'=>'Internal DB error']));
+            die;
+        }
+        if ($r = $result->fetch(PDO::FETCH_ASSOC)) {
+            return $this->constructObject($r);
+        } else {
+            return null;
+        }
+    }
+
+    public function newInstanceByEmail(string $email): ?User {
+        $result = $this->db->prepare('SELECT * FROM ' . TABLE_USER . ' WHERE email = :email');
+        $result->bindParam(':email', $email);
         if (!$result->execute()) {
             http_response_code(500);
             echo(json_encode(['error'=>'Internal DB error']));
