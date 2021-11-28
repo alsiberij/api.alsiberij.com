@@ -268,4 +268,16 @@ class User extends Entity {
         return $this->isActivated;
     }
 
+    public function activate(): bool {
+        if (!$this->isActivated) {
+            if ($this->db->query('UPDATE ' . TABLE_USER . ' SET activationStatus = 1 WHERE ID = ' . $this->ID)) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return true;
+        }
+    }
+
 }
