@@ -12,7 +12,7 @@ class UserCreator extends EntityCreator {
     }
 
     public function newInstanceByAccessToken(string $accessToken): ?User {
-        $tokenHash = md5($accessToken) . md5(md5($accessToken));
+        $tokenHash = User::calculateAccessTokenHash($accessToken);
         $result = $this->db->prepare('SELECT * FROM ' . TABLE_USER . ' WHERE accessToken = :token');
         $result->bindParam(':token', $tokenHash);
         if (!$result->execute()) {

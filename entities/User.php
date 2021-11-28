@@ -148,6 +148,10 @@ class User extends Entity {
         return md5(substr($saltMD5, 0, 16) . $activationToken . substr($saltMD5, 16, 16));
     }
 
+    public static function calculateAccessTokenHash(string $accessToken): string {
+        return md5($accessToken) . md5(md5($accessToken));
+    }
+
     public function __construct(int $ID, bool $isActivated, string $activationToken, ?string $accessToken, bool $isAdmin, bool $contentCreator,
                                 bool $privacy, string $nickname, string $email, bool $emailPrivacy, string $password,
                                 string $salt, string $registrationDate, int $balance, bool $balancePrivacy, bool $avatar,
