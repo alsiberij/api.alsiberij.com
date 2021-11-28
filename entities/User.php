@@ -56,13 +56,13 @@ class User extends Entity {
         return $errors;
     }
 
-    public static function validateEmail(string $email): array {
+    public static function validateEmail(string $email, bool $checkExistence): array {
         $errors = [];
         if (mb_strlen($email) < self::EMAIL_MIN_LENGTH || mb_strlen($email > self::EMAIL_MAX_LENGTH)) {
             $errors['email'] = 'Invalid length. Allowed length '. self::EMAIL_MIN_LENGTH . '-' . self::EMAIL_MAX_LENGTH;
         } elseif (!preg_match(self::EMAIL_PATTERN, $email)) {
             $errors['email'] = 'Invalid email';
-        } else {
+        } elseif ($checkExistence) {
             $result = DB::getConnection()->prepare('SELECT ID FROM ' . TABLE_USER . ' WHERE email = :email');
             $result->bindParam(':email', $email);
             if (!$result->execute()) {

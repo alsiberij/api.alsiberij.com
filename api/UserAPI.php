@@ -134,7 +134,7 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable {
         $password = $_POST['password'] ?? $_GET['password'] ?? '';
 
         $nicknameErrors = User::validateNickname($nickname);
-        $emailErrors = User::validateEmail($email);
+        $emailErrors = User::validateEmail($email, true);
         $passwordErrors = User::validatePassword($password);
 
         $errors = array_merge($nicknameErrors, $emailErrors, $passwordErrors);
