@@ -280,4 +280,8 @@ class User extends Entity {
         }
     }
 
+    public function getPassword(): string {
+        return $this->password;
+    }
+
 }
