@@ -1,7 +1,7 @@
 <?php
 
 
-class UserAPI extends API implements Retrievable, Creatable {
+class UserAPI extends API implements Retrievable, Creatable, Activatable {
 
     public function __construct() {
         parent::__construct();
@@ -24,6 +24,10 @@ class UserAPI extends API implements Retrievable, Creatable {
             }
             case 'delete': {
                 $this->delete();
+                return;
+            }
+            case 'activate': {
+                $this->activate();
                 return;
             }
 
@@ -232,6 +236,37 @@ class UserAPI extends API implements Retrievable, Creatable {
             http_response_code(400);
             echo(json_encode(['error' => 'Invalid parameter value: attempt should be `request` or `process`']));
             die;
+        }
+    }
+
+    public function activate(): void {
+        $activationToken = $_POST['activationToken'] ?? $_GET['activationToken'] ?? null;
+        if (!$activationToken) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Missing parameter: activationToken']));
+            die;
+        }
+        $tokenHash = User::calculateActivationTokenHash($activationToken);
+        $user = $this->creator->newInstanceByToken($tokenHash, true);
+        if (!$user) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Invalid activation token']));
+            die;
+        }
+
+        if ($user->isActivated()) {
+            http_response_code(200);
+            echo(json_encode(['response' => 'Already activated']));
+        } else {
+            $success = $user->activate();
+            if (!$success) {
+                http_response_code(500);
+                echo(json_encode(['error' => 'Query can not be executed']));
+                die;
+            } else {
+                http_response_code(200);
+                echo(json_encode(['response' => 'Success']));
+            }
         }
     }
 
