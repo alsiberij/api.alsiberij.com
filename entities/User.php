@@ -117,9 +117,10 @@ class User extends Entity {
         return $salt;
     }
 
-    private static function validateToken(string $token): bool {
+    private static function validateActivationToken(string $token, string $salt): bool {
+        $tokenHash = self::calculateActivationTokenHash($token, $salt);
         $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE activationToken = :token');
-        $result->bindParam(':token', $token);
+        $result->bindParam(':token', $tokenHash);
         if (!$result->execute()) {
             http_response_code(500);
             echo(json_encode(['error' => 'Query can not be executed']));
@@ -132,16 +133,20 @@ class User extends Entity {
         }
     }
 
-    public static function generateToken(): string {
+    public static function generateActivationToken(string $salt): string {
         do {
             $token = '';
             for ($i = 0; $i < self::TOKEN_LENGTH; $i++) {
                 $token .= self::TOKEN_ALPHABET[rand(0, mb_strlen(self::TOKEN_ALPHABET) - 1)];
             }
-        } while (!self::validateToken($token));
+        } while (!self::validateActivationToken($token, $salt));
         return $token;
     }
 
+    public static function calculateActivationTokenHash(string $activationToken, string $salt): string {
+        $saltMD5 = md5($salt);
+        return md5(substr($saltMD5, 0, 16) . $activationToken . substr($saltMD5, 16, 16));
+    }
 
     public function __construct(int $ID, bool $isActivated, string $activationToken, ?string $accessToken, bool $isAdmin, bool $contentCreator,
                                 bool $privacy, string $nickname, string $email, bool $emailPrivacy, string $password,
