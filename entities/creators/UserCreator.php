@@ -11,8 +11,7 @@ class UserCreator extends EntityCreator {
             $row['comments'], $row['paidOrders'], $row['lastSeenTime'], $row['lastSeenTimePrivacy']);
     }
 
-    public function newInstanceByToken(string $token, bool $isActivationToken): ?User {
-        $tokenHash = $isActivationToken ? User::calculateActivationTokenHash($token) : User::calculateAccessTokenHash($token);
+    public function newInstanceByToken(string $tokenHash, bool $isActivationToken): ?User {
         $query = 'SELECT * FROM ' . TABLE_USER . ' WHERE ' . ($isActivationToken ? 'activationToken' : 'accessToken') . ' = :token';
         $result = $this->db->prepare($query);
         $result->bindParam(':token', $tokenHash);
