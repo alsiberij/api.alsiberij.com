@@ -1,5 +1,7 @@
 <?php
 
+const ACCESS_TOKEN_LIFETIME = 60 * 24;
+
 const ROOT = __DIR__ . '/';
 const EMAIL = 'ceo@alsiberij.com';
 
