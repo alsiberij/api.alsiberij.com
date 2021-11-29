@@ -1,10 +1,11 @@
 <?php
 
+const ACCESS_TOKEN_LIFETIME = 60 * 24;
+
 const ROOT = __DIR__ . '/';
 const EMAIL = 'ceo@alsiberij.com';
 
 const TABLE_USER = 'users';
-const TABLE_ACTIVATION = 'activations';
 
 spl_autoload_register(function(string $className): void {
     $folders = [

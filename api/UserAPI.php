@@ -45,10 +45,10 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
     }
 
     private function handleUserData(array &$user, bool $accessAllAvailableData): void {
-        unset($user['activationToken']);
-        unset($user['password']);
+        unset($user['activationTokenHash']);
+        unset($user['passwordHash']);
         unset($user['salt']);
-        unset($user['accessToken']);
+        unset($user['accessTokenHash']);
         unset($user['isActivated']);
         if (!$accessAllAvailableData) {
             if (!$user['emailPrivacy']) {
@@ -149,16 +149,16 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
         }
 
         $salt = User::generateSalt();
-        $password = User::generatePasswordHash($password, $salt);
+        $passwordHash = User::generatePasswordHash($password, $salt);
 
-        $query = 'INSERT INTO users (activationToken, nickname, email, password, salt) VALUES (:token, :nickname, :email, :password, :salt);';
+        $query = 'INSERT INTO users (activationTokenHash, nickname, email, passwordHash, salt) VALUES (:activationToken, :nickname, :email, :password, :salt);';
         $result = $this->db->prepare($query);
         $activationToken = User::generateActivationToken();
         $activationTokenHash = User::calculateActivationTokenHash($activationToken);
-        $result->bindParam(':token', $activationTokenHash);
+        $result->bindParam(':activationToken', $activationTokenHash);
         $result->bindParam(':nickname', $nickname);
         $result->bindParam(':email', $email);
-        $result->bindParam(':password', $password);
+        $result->bindParam(':password', $passwordHash);
         $result->bindParam(':salt', $salt);
         if (!$result->execute()) {
             http_response_code(400);
@@ -251,7 +251,7 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
             die;
         }
         $tokenHash = User::calculateActivationTokenHash($activationToken);
-        $user = $this->creator->newInstanceByToken($tokenHash, true);
+        $user = $this->creator->newInstanceByActivationToken($tokenHash);
         if (!$user) {
             http_response_code(400);
             echo(json_encode(['error' => 'Invalid activation token']));
@@ -277,6 +277,7 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
     public function authenticate(): void {
         $email = $_POST['email'] ?? $_GET['email'] ?? null;
         $password = $_POST['password'] ?? $_GET['password'] ?? null;
+        $needToken = $_POST['needToken'] ?? $_GET['needToken'] ?? null;
 
         if (!$email || !$password) {
             http_response_code(400);
@@ -292,7 +293,7 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
         $user = $this->creator->newInstanceByEmail($email);
         if ($user) {
             $passedPasswordHash = User::generatePasswordHash($password, $user->getSalt());
-            $success = $user->getPassword() == $passedPasswordHash;
+            $success = $user->getPasswordHash() == $passedPasswordHash;
         } else {
             $success = false;
         }
@@ -301,9 +302,18 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
         if (!$success) {
             echo(json_encode(['response' => new StdClass]));
         } else {
-            $user = $user->toArray();
-            $this->handleUserData($user, true);
-            echo(json_encode(['response' => $user]));
+            if ($needToken && $needToken == 'true') {
+                $tokenArray = $user->getAccessToken();
+                if ($tokenArray) {
+                    echo(json_encode(['response' => $tokenArray]));
+                } else {
+                    http_response_code(500);
+                    echo(json_encode(['error' => 'Query can not be executed']));
+                    die;
+                }
+            } else {
+                echo(json_encode(['response' => ['ID' => $user->getID()]]));
+            }
         }
     }
 

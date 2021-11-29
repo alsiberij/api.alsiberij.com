@@ -3,16 +3,17 @@
 
 class User extends Entity {
 
-    protected bool $isActivated;
-    protected string $activationToken;
     protected ?string $accessToken;
+    protected ?DateTime $accessTokenExpiration;
+    protected bool $isActivated;
+    protected string $activationTokenHash;
     protected bool $isAdministrator;
     protected bool $isModerator;
     protected bool $privacy;
     protected string $nickname;
     protected string $email;
     protected bool $emailPrivacy;
-    protected string $password;
+    protected string $passwordHash;
     protected string $salt;
     protected DateTime $registrationDate;
     protected int $balance;
@@ -27,8 +28,11 @@ class User extends Entity {
     protected DateTime $lastSeenTime;
     protected bool $lastSeenTimePrivacy;
 
-    protected const TOKEN_LENGTH = 32;
-    public const TOKEN_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-';
+    public const ACTIVATION_TOKEN_LENGTH = 32;
+    public const ACTIVATION_TOKEN_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-';
+
+    public const ACCESS_TOKEN_LENGTH = 32;
+    public const ACCESS_TOKEN_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-';
 
     public const NICKNAME_MIN_LENGTH = 3;
     public const NICKNAME_MAX_LENGTH = 32;
@@ -119,7 +123,7 @@ class User extends Entity {
 
     private static function validateActivationToken(string $token): bool {
         $tokenHash = self::calculateActivationTokenHash($token);
-        $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE activationToken = :token');
+        $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE activationTokenHash = :token');
         $result->bindParam(':token', $tokenHash);
         if (!$result->execute()) {
             http_response_code(500);
@@ -136,8 +140,8 @@ class User extends Entity {
     public static function generateActivationToken(): string {
         do {
             $token = '';
-            for ($i = 0; $i < self::TOKEN_LENGTH; $i++) {
-                $token .= self::TOKEN_ALPHABET[rand(0, mb_strlen(self::TOKEN_ALPHABET) - 1)];
+            for ($i = 0; $i < self::ACTIVATION_TOKEN_LENGTH; $i++) {
+                $token .= self::ACTIVATION_TOKEN_ALPHABET[rand(0, mb_strlen(self::ACTIVATION_TOKEN_ALPHABET) - 1)];
             }
         } while (!self::validateActivationToken($token));
         return $token;
@@ -148,26 +152,28 @@ class User extends Entity {
         return md5(substr($tokenMD5, 0, 16) . $activationToken . substr($tokenMD5, 16, 16));
     }
 
-    public static function calculateAccessTokenHash(string $accessToken): string {
-        return md5($accessToken) . md5(md5($accessToken));
-    }
-
-    public function __construct(int $ID, bool $isActivated, string $activationToken, ?string $accessToken, bool $isAdmin, bool $contentCreator,
-                                bool $privacy, string $nickname, string $email, bool $emailPrivacy, string $password,
-                                string $salt, string $registrationDate, int $balance, bool $balancePrivacy, bool $avatar,
-                                ?string $birthday, ?string $location, ?string $bio, int $likes, int $comments,
-                                int $paidOrders, string $lastSeenTime, bool $lastSeenTimePrivacy) {
+    public function __construct(int $ID, ?string $accessToken, ?string $accessTokenExpiration, bool $isActivated, string $activationTokenHash,
+                                bool $isAdmin, bool $contentCreator, bool $privacy, string $nickname, string $email,
+                                bool $emailPrivacy, string $passwordHash, string  $salt, string $registrationDate,
+                                int $balance, bool $balancePrivacy, bool $avatar, ?string $birthday, ?string $location,
+                                ?string $bio, int $likes, int $comments, int $paidOrders, string $lastSeenTime,
+                                bool $lastSeenTimePrivacy) {
         parent::__construct($ID);
-        $this->isActivated = $isActivated;
-        $this->activationToken = $activationToken;
         $this->accessToken = $accessToken;
+        try {
+            $this->accessTokenExpiration = new DateTime($accessTokenExpiration);
+        } catch (Exception $ex) {
+            $this->accessTokenExpiration = new DateTime();
+        }
+        $this->isActivated = $isActivated;
+        $this->activationTokenHash = $activationTokenHash;
         $this->isAdministrator = $isAdmin;
         $this->isModerator = $contentCreator;
         $this->privacy = $privacy;
         $this->nickname = $nickname;
         $this->email = $email;
         $this->emailPrivacy = $emailPrivacy;
-        $this->password = $password;
+        $this->passwordHash = $passwordHash;
         $this->salt = $salt;
         try {
             $this->registrationDate = new DateTime($registrationDate);
@@ -201,17 +207,17 @@ class User extends Entity {
 
     public function toArray(): array {
         return array_merge(parent::toArray(), [
-            'ID' => $this->ID,
-            'activationStatus' => $this->isActivated,
-            'activationToken' => $this->activationToken,
             'accessToken' => $this->accessToken,
+            'accessTokenExpiration' => $this->accessTokenExpiration->getTimestamp(),
+            'activationStatus' => $this->isActivated,
+            'activationTokenHash' => $this->activationTokenHash,
             'isAdministrator' => $this->isAdministrator,
             'isModerator' => $this->isModerator,
             'privacy' => $this->privacy,
             'nickname' => $this->nickname,
             'email' => $this->email,
             'emailPrivacy' => $this->emailPrivacy,
-            'password' => $this->password,
+            'passwordHash' => $this->passwordHash,
             'salt' => $this->salt,
             'registrationDate' => $this->registrationDate->format('Y.m.d H:i:s'),
             'balance' => $this->balance,
@@ -257,7 +263,7 @@ class User extends Entity {
     }
 
     public function getDeletionToken(): string {
-        return substr(md5('DELETE' . $this->salt . 'DELETE'), 8, 16);
+        return md5('DELETE' . $this->salt . 'DELETE');
     }
 
     public function getEmail(): string {
@@ -280,8 +286,69 @@ class User extends Entity {
         }
     }
 
-    public function getPassword(): string {
-        return $this->password;
+    public function getPasswordHash(): string {
+        return $this->passwordHash;
     }
 
+    protected function validateAccessToken(string $token): bool {
+        $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE accessToken = :token');
+        $result->bindParam(':token', $token);
+        if (!$result->execute()) {
+            http_response_code(500);
+            echo(json_encode(['error' => 'Query can not be executed']));
+            die;
+        }
+        if ($result->fetch(PDO::FETCH_ASSOC)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    protected function generateAccessToken(): string {
+        do {
+            $token = '';
+            for ($i = 0; $i < self::ACCESS_TOKEN_LENGTH; $i++) {
+                $token .= self::ACCESS_TOKEN_ALPHABET[rand(0, mb_strlen(self::ACCESS_TOKEN_ALPHABET) - 1)];
+            }
+        } while (!self::validateAccessToken($token));
+        return $token;
+    }
+
+    public function getAccessToken(): ?array {
+        if (!$this->isAccessTokenExpired()) {
+            return ['accessToken' => $this->accessToken, 'expiresIn' => $this->accessTokenExpiration->getTimestamp()];
+        }
+        $token = $this->generateAccessToken();
+        $success = $this->db->query('UPDATE users SET accessToken = \'' . $token . '\' WHERE ID = ' . $this->ID);
+        if ($success) {
+            $expiration = time() + ACCESS_TOKEN_LIFETIME;
+            $this->db->query('UPDATE users SET accessTokenExpiration = \'' . date('Y-m-d H:i:s', $expiration) . '\' WHERE ID = ' . $this->ID);
+            return ['accessToken' => $token, 'expiresIn' => $expiration];
+        } else {
+            return null;
+        }
+    }
+
+    public function deleteAccessToken(): bool {
+        $successToken = $this->db->query('UPDATE users SET accessToken = NULL WHERE ID = ' . $this->ID);
+        $successExpiration = $this->db->query('UPDATE users SET accessTokenExpiration = NULL WHERE ID = ' . $this->ID);
+        return $successToken && $successExpiration;
+    }
+
+    public function isAccessTokenExpired(): bool {
+        if ($this->accessToken) {
+            return $this->accessTokenExpiration->diff(new DateTime())->invert == 0;
+        } else {
+            return false;
+        }
+    }
+
+    public function refreshAccessToken(): ?array {
+        if ($this->deleteAccessToken()) {
+            return $this->getAccessToken();
+        } else {
+            return null;
+        }
+    }
 }
