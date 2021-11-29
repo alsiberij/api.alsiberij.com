@@ -27,8 +27,11 @@ class User extends Entity {
     protected DateTime $lastSeenTime;
     protected bool $lastSeenTimePrivacy;
 
-    protected const TOKEN_LENGTH = 32;
-    public const TOKEN_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-';
+    public const ACTIVATION_TOKEN_LENGTH = 32;
+    public const ACTIVATION_TOKEN_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-';
+
+    public const ACCESS_TOKEN_LENGTH = 32;
+    public const ACCESS_TOKEN_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-';
 
     public const NICKNAME_MIN_LENGTH = 3;
     public const NICKNAME_MAX_LENGTH = 32;
@@ -136,8 +139,8 @@ class User extends Entity {
     public static function generateActivationToken(): string {
         do {
             $token = '';
-            for ($i = 0; $i < self::TOKEN_LENGTH; $i++) {
-                $token .= self::TOKEN_ALPHABET[rand(0, mb_strlen(self::TOKEN_ALPHABET) - 1)];
+            for ($i = 0; $i < self::ACTIVATION_TOKEN_LENGTH; $i++) {
+                $token .= self::ACTIVATION_TOKEN_ALPHABET[rand(0, mb_strlen(self::ACTIVATION_TOKEN_ALPHABET) - 1)];
             }
         } while (!self::validateActivationToken($token));
         return $token;
