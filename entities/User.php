@@ -330,4 +330,25 @@ class User extends Entity {
         }
     }
 
+    public function deleteAccessToken(): bool {
+        $successToken = $this->db->query('UPDATE users SET accessToken = NULL WHERE ID = ' . $this->ID);
+        $successExpiration = $this->db->query('UPDATE users SET accessTokenExpiration = NULL WHERE ID = ' . $this->ID);
+        return $successToken && $successExpiration;
+    }
+
+    public function isAccessTokenExpired(): bool {
+        if ($this->accessToken) {
+            return $this->accessTokenExpiration->diff(new DateTime())->invert == 0;
+        } else {
+            return false;
+        }
+    }
+
+    public function refreshAccessToken(): ?array {
+        if ($this->deleteAccessToken()) {
+            return $this->getAccessToken();
+        } else {
+            return null;
+        }
+    }
 }
