@@ -340,7 +340,7 @@ class User extends Entity {
         if ($this->accessToken) {
             return $this->accessTokenExpiration->diff(new DateTime())->invert == 0;
         } else {
-            return false;
+            return true;
         }
     }
 
