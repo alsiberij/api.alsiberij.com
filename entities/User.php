@@ -152,36 +152,6 @@ class User extends Entity {
         return md5(substr($tokenMD5, 0, 16) . $activationToken . substr($tokenMD5, 16, 16));
     }
 
-    public static function validateAccessTokenHash(string $token): bool {
-        $tokenHash = self::calculateAccessTokenHash($token);
-        $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE accessToken = :token');
-        $result->bindParam(':token', $tokenHash);
-        if (!$result->execute()) {
-            http_response_code(500);
-            echo(json_encode(['error' => 'Query can not be executed']));
-            die;
-        }
-        if ($result->fetch(PDO::FETCH_ASSOC)) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    public static function generateAccessToken(): string {
-        do {
-            $token = '';
-            for ($i = 0; $i < self::ACCESS_TOKEN_LENGTH; $i++) {
-                $token .= self::ACCESS_TOKEN_ALPHABET[rand(0, mb_strlen(self::ACCESS_TOKEN_ALPHABET) - 1)];
-            }
-        } while (!self::validateAccessTokenHash($token));
-        return $token;
-    }
-
-    public static function calculateAccessTokenHash(string $accessToken): string {
-        return md5(md5($accessToken) . md5(md5($accessToken)));
-    }
-
     public function __construct(int $ID, ?string $accessToken, ?DateTime $accessTokenExpiration, bool $isActivated, string $activationTokenHash,
                                 bool $isAdmin, bool $contentCreator, bool $privacy, string $nickname, string $email,
                                 bool $emailPrivacy, string $passwordHash, string  $salt, string $registrationDate,
@@ -314,6 +284,43 @@ class User extends Entity {
 
     public function getPasswordHash(): string {
         return $this->passwordHash;
+    }
+
+    protected function validateAccessToken(string $token): bool {
+        $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE accessToken = :token');
+        $result->bindParam(':token', $token);
+        if (!$result->execute()) {
+            http_response_code(500);
+            echo(json_encode(['error' => 'Query can not be executed']));
+            die;
+        }
+        if ($result->fetch(PDO::FETCH_ASSOC)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    protected function generateAccessToken(): string {
+        do {
+            $token = '';
+            for ($i = 0; $i < self::ACCESS_TOKEN_LENGTH; $i++) {
+                $token .= self::ACCESS_TOKEN_ALPHABET[rand(0, mb_strlen(self::ACCESS_TOKEN_ALPHABET) - 1)];
+            }
+        } while (!self::validateAccessToken($token));
+        return $token;
+    }
+
+    public function newAccessToken(): ?array {
+        $token = $this->generateAccessToken();
+        $success = $this->db->query('UPDATE users SET accessToken = \'' . $token . '\' WHERE ID = ' . $this->ID);
+        if ($success) {
+            $expiration = time() + ACCESS_TOKEN_LIFETIME;
+            $this->db->query('UPDATE users SET accessTokenExpiration = \'' . date('Y-m-d H:i:s', $expiration) . '\' WHERE ID = ' . $this->ID);
+            return ['accessToken' => $token, 'expiresIn' => $expiration];
+        } else {
+            return null;
+        }
     }
 
 }
