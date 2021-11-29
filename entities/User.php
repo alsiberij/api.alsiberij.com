@@ -3,9 +3,10 @@
 
 class User extends Entity {
 
+    protected ?string $accessToken;
+    protected ?DateTime $accessTokenExpiration;
     protected bool $isActivated;
     protected string $activationTokenHash;
-    protected ?string $accessTokenHash;
     protected bool $isAdministrator;
     protected bool $isModerator;
     protected bool $privacy;
@@ -153,7 +154,7 @@ class User extends Entity {
 
     public static function validateAccessTokenHash(string $token): bool {
         $tokenHash = self::calculateAccessTokenHash($token);
-        $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE accessTokenHash = :token');
+        $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE accessToken = :token');
         $result->bindParam(':token', $tokenHash);
         if (!$result->execute()) {
             http_response_code(500);
@@ -181,16 +182,17 @@ class User extends Entity {
         return md5(md5($accessToken) . md5(md5($accessToken)));
     }
 
-    public function __construct(int $ID, bool $isActivated, string $activationTokenHash, ?string $accessTokenHash,
+    public function __construct(int $ID, ?string $accessToken, ?DateTime $accessTokenExpiration, bool $isActivated, string $activationTokenHash,
                                 bool $isAdmin, bool $contentCreator, bool $privacy, string $nickname, string $email,
                                 bool $emailPrivacy, string $passwordHash, string  $salt, string $registrationDate,
                                 int $balance, bool $balancePrivacy, bool $avatar, ?string $birthday, ?string $location,
                                 ?string $bio, int $likes, int $comments, int $paidOrders, string $lastSeenTime,
                                 bool $lastSeenTimePrivacy) {
         parent::__construct($ID);
+        $this->accessToken = $accessToken;
+        $this->accessTokenExpiration = $accessTokenExpiration;
         $this->isActivated = $isActivated;
         $this->activationTokenHash = $activationTokenHash;
-        $this->accessTokenHash = $accessTokenHash;
         $this->isAdministrator = $isAdmin;
         $this->isModerator = $contentCreator;
         $this->privacy = $privacy;
@@ -231,10 +233,10 @@ class User extends Entity {
 
     public function toArray(): array {
         return array_merge(parent::toArray(), [
-            'ID' => $this->ID,
+            'accessToken' => $this->accessToken,
+            'accessTokenExpiration' => $this->accessTokenExpiration->getTimestamp(),
             'activationStatus' => $this->isActivated,
             'activationTokenHash' => $this->activationTokenHash,
-            'accessTokenHash' => $this->accessTokenHash,
             'isAdministrator' => $this->isAdministrator,
             'isModerator' => $this->isModerator,
             'privacy' => $this->privacy,

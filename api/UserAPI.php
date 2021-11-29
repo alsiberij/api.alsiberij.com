@@ -151,14 +151,11 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
         $salt = User::generateSalt();
         $passwordHash = User::generatePasswordHash($password, $salt);
 
-        $query = 'INSERT INTO users (activationTokenHash, accessTokenHash, nickname, email, passwordHash, salt) VALUES (:activationToken, :accessToken, :nickname, :email, :password, :salt);';
+        $query = 'INSERT INTO users (activationTokenHash, nickname, email, passwordHash, salt) VALUES (:activationToken, :nickname, :email, :password, :salt);';
         $result = $this->db->prepare($query);
         $activationToken = User::generateActivationToken();
         $activationTokenHash = User::calculateActivationTokenHash($activationToken);
         $result->bindParam(':activationToken', $activationTokenHash);
-        $accessToken = User::generateAccessToken();
-        $accessTokenHash = User::calculateAccessTokenHash($accessToken);
-        $result->bindParam(':accessToken', $accessTokenHash);
         $result->bindParam(':nickname', $nickname);
         $result->bindParam(':email', $email);
         $result->bindParam(':password', $passwordHash);

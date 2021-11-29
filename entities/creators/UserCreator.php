@@ -4,7 +4,7 @@
 class UserCreator extends EntityCreator {
 
     protected function constructObject(array $row): User {
-        return new User($row['ID'], $row['activationStatus'], $row['activationTokenHash'], $row['accessTokenHash'],
+        return new User($row['ID'], $row['accessToken'], $row['accessTokenExpiration'], $row['activationStatus'], $row['activationTokenHash'],
             $row['administrator'], $row['moderator'], $row['privacy'], $row['nickname'], $row['email'],
             $row['emailPrivacy'], $row['passwordHash'], $row['salt'], $row['registrationDate'], $row['balance'],
             $row['balancePrivacy'], $row['avatar'], $row['birthday'], $row['location'], $row['bio'], $row['likes'],
@@ -12,7 +12,7 @@ class UserCreator extends EntityCreator {
     }
 
     public function newInstanceByAccessToken(string $tokenHash): ?User {
-        $query = 'SELECT * FROM ' . TABLE_USER . ' WHERE accessTokenHash = :token';
+        $query = 'SELECT * FROM ' . TABLE_USER . ' WHERE accessToken = :token';
         $result = $this->db->prepare($query);
         $result->bindParam(':token', $tokenHash);
         if (!$result->execute()) {
