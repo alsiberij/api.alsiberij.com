@@ -152,7 +152,7 @@ class User extends Entity {
         return md5(substr($tokenMD5, 0, 16) . $activationToken . substr($tokenMD5, 16, 16));
     }
 
-    public function __construct(int $ID, ?string $accessToken, ?DateTime $accessTokenExpiration, bool $isActivated, string $activationTokenHash,
+    public function __construct(int $ID, ?string $accessToken, ?string $accessTokenExpiration, bool $isActivated, string $activationTokenHash,
                                 bool $isAdmin, bool $contentCreator, bool $privacy, string $nickname, string $email,
                                 bool $emailPrivacy, string $passwordHash, string  $salt, string $registrationDate,
                                 int $balance, bool $balancePrivacy, bool $avatar, ?string $birthday, ?string $location,
@@ -160,7 +160,11 @@ class User extends Entity {
                                 bool $lastSeenTimePrivacy) {
         parent::__construct($ID);
         $this->accessToken = $accessToken;
-        $this->accessTokenExpiration = $accessTokenExpiration;
+        try {
+            $this->accessTokenExpiration = new DateTime($accessTokenExpiration);
+        } catch (Exception $ex) {
+            $this->accessTokenExpiration = new DateTime();
+        }
         $this->isActivated = $isActivated;
         $this->activationTokenHash = $activationTokenHash;
         $this->isAdministrator = $isAdmin;
