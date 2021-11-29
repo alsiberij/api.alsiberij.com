@@ -287,7 +287,7 @@ class User extends Entity {
     }
 
     public function getDeletionToken(): string {
-        return substr(md5('DELETE' . $this->salt . 'DELETE'), 8, 16);
+        return md5('DELETE' . $this->salt . 'DELETE');
     }
 
     public function getEmail(): string {
