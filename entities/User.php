@@ -315,7 +315,10 @@ class User extends Entity {
         return $token;
     }
 
-    public function newAccessToken(): ?array {
+    public function getAccessToken(): ?array {
+        if (!$this->isAccessTokenExpired()) {
+            return ['accessToken' => $this->accessToken, 'expiresIn' => $this->accessTokenExpiration->getTimestamp()];
+        }
         $token = $this->generateAccessToken();
         $success = $this->db->query('UPDATE users SET accessToken = \'' . $token . '\' WHERE ID = ' . $this->ID);
         if ($success) {

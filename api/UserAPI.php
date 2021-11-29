@@ -277,6 +277,7 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
     public function authenticate(): void {
         $email = $_POST['email'] ?? $_GET['email'] ?? null;
         $password = $_POST['password'] ?? $_GET['password'] ?? null;
+        $needToken = $_POST['needToken'] ?? $_GET['needToken'] ?? null;
 
         if (!$email || !$password) {
             http_response_code(400);
@@ -301,9 +302,18 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
         if (!$success) {
             echo(json_encode(['response' => new StdClass]));
         } else {
-            $user = $user->toArray();
-            $this->handleUserData($user, true);
-            echo(json_encode(['response' => $user]));
+            if ($needToken && $needToken == 'true') {
+                $tokenArray = $user->getAccessToken();
+                if ($tokenArray) {
+                    echo(json_encode(['response' => $tokenArray]));
+                } else {
+                    http_response_code(500);
+                    echo(json_encode(['error' => 'Query can not be executed']));
+                    die;
+                }
+            } else {
+                echo(json_encode(['response' => ['ID' => $user->getID()]]));
+            }
         }
     }
 
