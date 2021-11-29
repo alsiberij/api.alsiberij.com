@@ -251,7 +251,7 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
             die;
         }
         $tokenHash = User::calculateActivationTokenHash($activationToken);
-        $user = $this->creator->newInstanceByToken($tokenHash, true);
+        $user = $this->creator->newInstanceByActivationToken($tokenHash);
         if (!$user) {
             http_response_code(400);
             echo(json_encode(['error' => 'Invalid activation token']));
