@@ -151,6 +151,32 @@ class User extends Entity {
         return md5(substr($tokenMD5, 0, 16) . $activationToken . substr($tokenMD5, 16, 16));
     }
 
+    public static function validateAccessTokenHash(string $token): bool {
+        $tokenHash = self::calculateAccessTokenHash($token);
+        $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE accessTokenHash = :token');
+        $result->bindParam(':token', $tokenHash);
+        if (!$result->execute()) {
+            http_response_code(500);
+            echo(json_encode(['error' => 'Query can not be executed']));
+            die;
+        }
+        if ($result->fetch(PDO::FETCH_ASSOC)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    public static function generateAccessToken(): string {
+        do {
+            $token = '';
+            for ($i = 0; $i < self::ACCESS_TOKEN_LENGTH; $i++) {
+                $token .= self::ACCESS_TOKEN_ALPHABET[rand(0, mb_strlen(self::ACCESS_TOKEN_ALPHABET) - 1)];
+            }
+        } while (!self::validateAccessTokenHash($token));
+        return $token;
+    }
+
     public static function calculateAccessTokenHash(string $accessToken): string {
         return md5($accessToken) . md5(md5($accessToken));
     }
