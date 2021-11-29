@@ -178,7 +178,7 @@ class User extends Entity {
     }
 
     public static function calculateAccessTokenHash(string $accessToken): string {
-        return md5($accessToken) . md5(md5($accessToken));
+        return md5(md5($accessToken) . md5(md5($accessToken)));
     }
 
     public function __construct(int $ID, bool $isActivated, string $activationTokenHash, ?string $accessTokenHash,
