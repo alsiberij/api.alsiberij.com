@@ -53,6 +53,22 @@ class UserCreator extends EntityCreator {
         return '';
     }
 
+    public static function delete(User $user, string $deleteToken): bool {
+        if ($user->getDeletionToken() != $deleteToken) {
+            return false;
+        }
+        $query = 'DELETE FROM users WHERE ID = :ID';
+        $result = DB::getConnection()->prepare($query);
+        $userID = $user->getID();
+        $result->bindParam(':ID', $userID);
+        if (!$result->execute()) {
+            http_response_code(500);
+            echo(json_encode(['error' => 'Query can not be executed']));
+            die;
+        }
+        return true;
+    }
+
     protected function constructObject(array $row): User {
         return new User($row['ID'], $row['accessToken'], $row['accessTokenExpiration'], $row['activationStatus'],
             $row['activationTokenHash'], $row['administrator'], $row['moderator'], $row['privacy'],

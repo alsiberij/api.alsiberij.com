@@ -173,11 +173,14 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
 
         if ($attempt == 'request') {
             $msg = '
-                <!DOCTYPE html>
-                <html lang=\'ru\'>
-                    Премногоуважаемый(ая) <b>' . $this->authorizedUser->getNickname() . '</b>.<br>
-                    Ваш токен удаления аккаунта ' . $this->authorizedUser->getDeletionToken() . ' .
-                </html>';
+                    <body>
+                        <table>
+                            <tr>
+                                <td>Премногоуважаемый(ая) <b>' . $this->authorizedUser->getNickname(). '</b> <br>Ваш токен удаления аккаунта ' . $this->authorizedUser->getDeletionToken() . ' .</td>
+                            </tr> 
+                        </table>
+                    </body>
+            ';
             $from = 'From: '. EMAIL . '\r\n';
             if (!mail($this->authorizedUser->getEmail(), 'Удаление аккаунта', $msg, $from)) {
                 http_response_code(500);
@@ -193,18 +196,9 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
                 echo(json_encode(['error' => 'Missing parameter: deleteToken']));
                 die;
             }
-            if ($this->authorizedUser->getDeletionToken() != $deleteToken) {
+            if (!$this->creator::delete($this->authorizedUser, $deleteToken)) {
                 http_response_code(400);
-                echo(json_encode(['error' => 'Invalid delete token']));
-                die;
-            }
-            $query = 'DELETE FROM users WHERE ID = :ID';
-            $result = $this->db->prepare($query);
-            $userID = $this->authorizedUser->getID();
-            $result->bindParam(':ID', $userID);
-            if (!$result->execute()) {
-                http_response_code(500);
-                echo(json_encode(['error' => 'Query can not be executed']));
+                echo(json_encode(['error' => 'Invalid deleteToken']));
                 die;
             }
 
