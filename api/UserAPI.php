@@ -141,10 +141,22 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
         $emailErrors = User::validateEmail($email, true);
         $passwordErrors = User::validatePassword($password);
 
-        $errors = array_merge($nicknameErrors, $emailErrors, $passwordErrors);
-        if (!empty($errors)) {
+        $nicknameError = User::validateNickname($nickname);
+        if ($nicknameError) {
             http_response_code(400);
-            echo(json_encode(['errors'=>$errors]));
+            echo(json_encode(['error' => $nicknameError]));
+            die;
+        }
+        $emailError = User::validateEmail($email, true);
+        if ($emailError) {
+            http_response_code(400);
+            echo(json_encode(['error' => $emailError]));
+            die;
+        }
+        $passwordError = User::validatePassword($password);
+        if ($passwordError) {
+            http_response_code(400);
+            echo(json_encode(['error' => $passwordError]));
             die;
         }
 

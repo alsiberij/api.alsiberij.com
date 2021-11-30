@@ -50,22 +50,22 @@ class User extends Entity {
     public const SALT_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-';
 
 
-    public static function validateNickname(string $nickname): array {
-        $errors = [];
+    public static function validateNickname(string $nickname): string {
+        $error = '';
         if (mb_strlen($nickname) < self::NICKNAME_MIN_LENGTH || mb_strlen($nickname > self::NICKNAME_MAX_LENGTH)) {
-            $errors['nickname'] = 'Invalid length. Allowed length '. self::NICKNAME_MIN_LENGTH . '-' . self::NICKNAME_MAX_LENGTH;
+            $error  = 'Invalid nickname length. Allowed length '. self::NICKNAME_MIN_LENGTH . '-' . self::NICKNAME_MAX_LENGTH;
         } elseif (!preg_match(self::NICKNAME_PATTERN, $nickname)) {
-            $errors['nickname'] = 'Invalid nickname. Special characters are not allowed';
+            $error = 'Invalid nickname. Special characters are not allowed';
         }
-        return $errors;
+        return $error;
     }
 
-    public static function validateEmail(string $email, bool $checkExistence): array {
-        $errors = [];
+    public static function validateEmail(string $email, bool $checkExistence): string {
+        $error = '';
         if (mb_strlen($email) < self::EMAIL_MIN_LENGTH || mb_strlen($email > self::EMAIL_MAX_LENGTH)) {
-            $errors['email'] = 'Invalid length. Allowed length '. self::EMAIL_MIN_LENGTH . '-' . self::EMAIL_MAX_LENGTH;
+            $error = 'Invalid email length. Allowed length '. self::EMAIL_MIN_LENGTH . '-' . self::EMAIL_MAX_LENGTH;
         } elseif (!preg_match(self::EMAIL_PATTERN, $email)) {
-            $errors['email'] = 'Invalid email';
+            $error = 'Invalid email';
         } elseif ($checkExistence) {
             $result = DB::getConnection()->prepare('SELECT ID FROM ' . TABLE_USER . ' WHERE email = :email');
             $result->bindParam(':email', $email);
@@ -75,20 +75,20 @@ class User extends Entity {
                 die;
             }
             if ($result->fetch(PDO::FETCH_ASSOC)) {
-                $errors['email'] = 'Email already exists';
+                $error = 'Email already exists';
             }
         }
-        return $errors;
+        return $error;
     }
 
-    public static function validatePassword(string $password): array {
-        $errors = [];
+    public static function validatePassword(string $password): string {
+        $error = '';
         if (mb_strlen($password) < self::PASSWORD_MIN_LENGTH || mb_strlen($password) > self::PASSWORD_MAX_LENGTH) {
-            $errors['password'] = 'Invalid length. Allowed length '. self::PASSWORD_MIN_LENGTH . '-' . self::PASSWORD_MAX_LENGTH;
+            $error = 'Invalid password length. Allowed length '. self::PASSWORD_MIN_LENGTH . '-' . self::PASSWORD_MAX_LENGTH;
         } elseif (!preg_match(self::PASSWORD_PATTERN, $password)) {
-            $errors['password'] = 'Invalid password. Password should have at least 1 letter and 1 digit';
+            $error = 'Invalid password. Password should have at least 1 letter and 1 digit';
         }
-        return $errors;
+        return $error;
     }
 
     public static function generatePasswordHash(string $password, string $salt): string {
