@@ -137,9 +137,7 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
         $email = $_POST['email'] ?? $_GET['email'] ?? '';
         $password = $_POST['password'] ?? $_GET['password'] ?? '';
 
-        $nicknameErrors = User::validateNickname($nickname);
-        $emailErrors = User::validateEmail($email, true);
-        $passwordErrors = User::validatePassword($password);
+        $email = strtolower($email);
 
         $nicknameError = User::validateNickname($nickname);
         if ($nicknameError) {
@@ -296,6 +294,9 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
             echo(json_encode(['error' => 'Missing parameters: email or password']));
             die;
         }
+
+        $email = strtolower($email);
+
         if (!empty(User::validateEmail($email, false)) || !empty(User::validatePassword($password))) {
             http_response_code(400);
             echo(json_encode(['error' => 'Invalid parameters: email or password']));
