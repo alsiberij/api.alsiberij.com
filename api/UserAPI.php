@@ -146,56 +146,11 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
         $email = $_POST['email'] ?? $_GET['email'] ?? '';
         $password = $_POST['password'] ?? $_GET['password'] ?? '';
 
-        $email = strtolower($email);
+        $error = $this->creator::create($nickname, $email, $password);
 
-        $nicknameError = User::validateNickname($nickname);
-        if ($nicknameError) {
+        if ($error) {
             http_response_code(400);
-            echo(json_encode(['error' => $nicknameError]));
-            die;
-        }
-        $emailError = User::validateEmail($email, true);
-        if ($emailError) {
-            http_response_code(400);
-            echo(json_encode(['error' => $emailError]));
-            die;
-        }
-        $passwordError = User::validatePassword($password);
-        if ($passwordError) {
-            http_response_code(400);
-            echo(json_encode(['error' => $passwordError]));
-            die;
-        }
-
-        $salt = User::generateSalt();
-        $passwordHash = User::generatePasswordHash($password, $salt);
-
-        $query = 'INSERT INTO users (activationTokenHash, nickname, email, passwordHash, salt) VALUES (:activationToken, :nickname, :email, :password, :salt);';
-        $result = $this->db->prepare($query);
-        $activationToken = User::generateActivationToken();
-        $activationTokenHash = User::calculateActivationTokenHash($activationToken);
-        $result->bindParam(':activationToken', $activationTokenHash);
-        $result->bindParam(':nickname', $nickname);
-        $result->bindParam(':email', $email);
-        $result->bindParam(':password', $passwordHash);
-        $result->bindParam(':salt', $salt);
-        if (!$result->execute()) {
-            http_response_code(400);
-            echo(json_encode(['error' => 'Query can not be executed']));
-            die;
-        }
-
-        $msg = "
-                <!DOCTYPE html>
-                <html lang='ru'>
-                    Премногоуважаемый(ая) <b>$nickname</b>.<br>
-                    Ваш токен активации аккаунта $activationToken .
-                </html>";
-        $from = 'From: '. EMAIL . '\r\n';
-        if (!mail($email, 'Регистрация', $msg, $from)) {
-            http_response_code(500);
-            echo(json_encode(['error' => 'Email can\'t be sent']));
-            die;
+            echo(json_encode(['error' => $error]));
         }
 
         http_response_code(200);
