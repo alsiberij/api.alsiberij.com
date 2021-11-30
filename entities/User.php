@@ -324,6 +324,8 @@ class User extends Entity {
         if ($success) {
             $expiration = time() + ACCESS_TOKEN_LIFETIME;
             $this->db->query('UPDATE users SET accessTokenExpiration = \'' . date('Y-m-d H:i:s', $expiration) . '\' WHERE ID = ' . $this->ID);
+            $this->accessToken = $token;
+            $this->accessTokenExpiration = (new DateTime())->setTimestamp($expiration);
             return ['accessToken' => $token, 'expiresIn' => $expiration];
         } else {
             return null;
@@ -331,9 +333,15 @@ class User extends Entity {
     }
 
     public function deleteAccessToken(): bool {
-        $successToken = $this->db->query('UPDATE users SET accessToken = NULL WHERE ID = ' . $this->ID);
-        $successExpiration = $this->db->query('UPDATE users SET accessTokenExpiration = NULL WHERE ID = ' . $this->ID);
-        return $successToken && $successExpiration;
+        $successTokenDeletion = $this->db->query('UPDATE users SET accessToken = NULL WHERE ID = ' . $this->ID);
+        if ($successTokenDeletion) {
+            $this->accessToken = null;
+        }
+        $successExpirationDeletion = $this->db->query('UPDATE users SET accessTokenExpiration = NULL WHERE ID = ' . $this->ID);
+        if ($successExpirationDeletion) {
+            $this->accessTokenExpiration = null;
+        }
+        return $successTokenDeletion && $successExpirationDeletion;
     }
 
     public function isAccessTokenExpired(): bool {
