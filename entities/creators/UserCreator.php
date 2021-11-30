@@ -30,7 +30,7 @@ class UserCreator extends EntityCreator {
         $result->bindParam(':password', $passwordHash);
         $result->bindParam(':salt', $salt);
         if (!$result->execute()) {
-            http_response_code(400);
+            http_response_code(500);
             echo(json_encode(['error' => 'Query can not be executed']));
             die;
         }
