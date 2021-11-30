@@ -45,11 +45,12 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
     }
 
     private function handleUserData(array &$user, bool $accessAllAvailableData): void {
+        unset($user['accessToken']);
+        unset($user['accessTokenExpiration']);
+        unset($user['activationStatus']);
         unset($user['activationTokenHash']);
         unset($user['passwordHash']);
         unset($user['salt']);
-        unset($user['accessTokenHash']);
-        unset($user['isActivated']);
         if (!$accessAllAvailableData) {
             if (!$user['emailPrivacy']) {
                 $user['email'] = null;
