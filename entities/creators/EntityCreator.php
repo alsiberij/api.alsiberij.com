@@ -15,4 +15,6 @@ abstract class EntityCreator {
 
     public abstract function allInstances(): array;
 
+    public abstract function table(): string;
+
 }

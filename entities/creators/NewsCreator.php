@@ -9,7 +9,7 @@ class NewsCreator extends EntityCreator {
     }
 
     public function newInstance(int $ID): ?News {
-        $result = $this->db->prepare('SELECT * FROM ' . TABLE_NEWS . ' WHERE ID = :ID');
+        $result = $this->db->prepare('SELECT * FROM ' . $this->table() . ' WHERE ID = :ID');
         $result->bindParam(':ID', $ID, PDO::PARAM_INT);
         if (!$result->execute()) {
             http_response_code(500);
@@ -24,7 +24,7 @@ class NewsCreator extends EntityCreator {
     }
 
     public function allInstances(): array {
-        $result = $this->db->query('SELECT * FROM ' . TABLE_NEWS);
+        $result = $this->db->query('SELECT * FROM ' . $this->table());
         if (!$result->execute()) {
             http_response_code(500);
             echo(json_encode(['error'=>'Internal DB error']));
@@ -35,6 +35,10 @@ class NewsCreator extends EntityCreator {
             $usersList[] = $this->constructObject($r);
         }
         return $usersList;
+    }
+
+    public function table(): string {
+        return TABLE_NEWS;
     }
 
 }

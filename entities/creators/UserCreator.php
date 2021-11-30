@@ -13,7 +13,7 @@ class UserCreator extends EntityCreator {
     }
 
     public function newInstanceByAccessToken(string $tokenHash): ?User {
-        $query = 'SELECT * FROM ' . TABLE_USER . ' WHERE accessToken = :token';
+        $query = 'SELECT * FROM ' . $this->table() . ' WHERE accessToken = :token';
         $result = $this->db->prepare($query);
         $result->bindParam(':token', $tokenHash);
         if (!$result->execute()) {
@@ -29,7 +29,7 @@ class UserCreator extends EntityCreator {
     }
 
     public function newInstanceByActivationToken(string $tokenHash): ?User {
-        $query = 'SELECT * FROM ' . TABLE_USER . ' WHERE activationTokenHash = :token';
+        $query = 'SELECT * FROM ' . $this->table() . ' WHERE activationTokenHash = :token';
         $result = $this->db->prepare($query);
         $result->bindParam(':token', $tokenHash);
         if (!$result->execute()) {
@@ -45,7 +45,7 @@ class UserCreator extends EntityCreator {
     }
 
     public function newInstanceByEmail(string $email): ?User {
-        $result = $this->db->prepare('SELECT * FROM ' . TABLE_USER . ' WHERE email = :email');
+        $result = $this->db->prepare('SELECT * FROM ' . $this->table() . ' WHERE email = :email');
         $result->bindParam(':email', $email);
         if (!$result->execute()) {
             http_response_code(500);
@@ -60,7 +60,7 @@ class UserCreator extends EntityCreator {
     }
 
     public function newInstance(int $ID): ?User {
-        $result = $this->db->prepare('SELECT * FROM ' . TABLE_USER . ' WHERE ID = :ID');
+        $result = $this->db->prepare('SELECT * FROM ' . $this->table() . ' WHERE ID = :ID');
         $result->bindParam(':ID', $ID, PDO::PARAM_INT);
         if (!$result->execute()) {
             http_response_code(500);
@@ -75,7 +75,7 @@ class UserCreator extends EntityCreator {
     }
 
     public function allInstances(): array {
-        $result = $this->db->query('SELECT * FROM ' . TABLE_USER);
+        $result = $this->db->query('SELECT * FROM ' . $this->table());
         if (!$result->execute()) {
             http_response_code(500);
             echo(json_encode(['error'=>'Internal DB error']));
@@ -88,4 +88,7 @@ class UserCreator extends EntityCreator {
         return $usersList;
     }
 
+    public function table(): string {
+        return TABLE_USER;
+    }
 }
