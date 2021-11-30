@@ -34,6 +34,14 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
                 $this->authenticate();
                 return;
             }
+            case 'refreshToken': {
+                $this->refreshToken();
+                return;
+            }
+            case 'revokeToken': {
+                $this->revokeToken();
+                return;
+            }
 
 
             default: {
@@ -328,6 +336,54 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
             } else {
                 echo(json_encode(['response' => ['ID' => $user->getID()]]));
             }
+        }
+    }
+
+    public function refreshToken(): void {
+        if (!$this->authorizedUser) {
+            http_response_code(403);
+            echo(json_encode(['error' => 'Unauthorized']));
+            die;
+        }
+        $accessToken = $_POST['accessToken'] ?? $_GET['accessToken'] ?? null;
+        if (!$accessToken) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Token can\'t be refreshed if you are authorized by session ID']));
+            die;
+        }
+
+        $newToken = $this->authorizedUser->refreshAccessToken();
+        if ($newToken) {
+            http_response_code(200);
+            echo(json_encode(['response' => $newToken]));
+        } else {
+            http_response_code(500);
+            echo(json_encode(['error' => 'Query can not be executed']));
+            die;
+        }
+    }
+
+    public function revokeToken(): void {
+        if (!$this->authorizedUser) {
+            http_response_code(403);
+            echo(json_encode(['error' => 'Unauthorized']));
+            die;
+        }
+        $accessToken = $_POST['accessToken'] ?? $_GET['accessToken'] ?? null;
+        if (!$accessToken) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Token can\'t be revoked if you are authorized by session ID']));
+            die;
+        }
+
+        $success = $this->authorizedUser->revokeAccessToken();
+        if ($success) {
+            http_response_code(200);
+            echo(json_encode(['response' => 'Success']));
+        } else {
+            http_response_code(500);
+            echo(json_encode(['error' => 'Query can not be executed']));
+            die;
         }
     }
 
