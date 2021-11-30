@@ -20,4 +20,8 @@ abstract class AssessableEntity extends Entity {
         return $this->changeRating($this->rating - 1);
     }
 
+    public function getRating(): int {
+        return $this->rating;
+    }
+
 }
