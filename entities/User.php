@@ -332,7 +332,7 @@ class User extends Entity {
         }
     }
 
-    public function deleteAccessToken(): bool {
+    public function revokeAccessToken(): bool {
         $successTokenDeletion = $this->db->query('UPDATE users SET accessToken = NULL WHERE ID = ' . $this->ID);
         if ($successTokenDeletion) {
             $this->accessToken = null;
@@ -353,7 +353,7 @@ class User extends Entity {
     }
 
     public function refreshAccessToken(): ?array {
-        if ($this->deleteAccessToken()) {
+        if ($this->revokeAccessToken()) {
             return $this->getAccessToken();
         } else {
             return null;
