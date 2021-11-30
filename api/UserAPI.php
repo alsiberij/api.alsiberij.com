@@ -34,6 +34,14 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
                 $this->authenticate();
                 return;
             }
+            case 'refreshToken': {
+                $this->refreshToken();
+                return;
+            }
+            case 'revokeToken': {
+                $this->revokeToken();
+                return;
+            }
 
 
             default: {
@@ -45,11 +53,12 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
     }
 
     private function handleUserData(array &$user, bool $accessAllAvailableData): void {
+        unset($user['accessToken']);
+        unset($user['accessTokenExpiration']);
+        unset($user['activationStatus']);
         unset($user['activationTokenHash']);
         unset($user['passwordHash']);
         unset($user['salt']);
-        unset($user['accessTokenHash']);
-        unset($user['isActivated']);
         if (!$accessAllAvailableData) {
             if (!$user['emailPrivacy']) {
                 $user['email'] = null;
@@ -137,14 +146,24 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
         $email = $_POST['email'] ?? $_GET['email'] ?? '';
         $password = $_POST['password'] ?? $_GET['password'] ?? '';
 
-        $nicknameErrors = User::validateNickname($nickname);
-        $emailErrors = User::validateEmail($email, true);
-        $passwordErrors = User::validatePassword($password);
+        $email = strtolower($email);
 
-        $errors = array_merge($nicknameErrors, $emailErrors, $passwordErrors);
-        if (!empty($errors)) {
+        $nicknameError = User::validateNickname($nickname);
+        if ($nicknameError) {
             http_response_code(400);
-            echo(json_encode(['errors'=>$errors]));
+            echo(json_encode(['error' => $nicknameError]));
+            die;
+        }
+        $emailError = User::validateEmail($email, true);
+        if ($emailError) {
+            http_response_code(400);
+            echo(json_encode(['error' => $emailError]));
+            die;
+        }
+        $passwordError = User::validatePassword($password);
+        if ($passwordError) {
+            http_response_code(400);
+            echo(json_encode(['error' => $passwordError]));
             die;
         }
 
@@ -284,6 +303,9 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
             echo(json_encode(['error' => 'Missing parameters: email or password']));
             die;
         }
+
+        $email = strtolower($email);
+
         if (!empty(User::validateEmail($email, false)) || !empty(User::validatePassword($password))) {
             http_response_code(400);
             echo(json_encode(['error' => 'Invalid parameters: email or password']));
@@ -314,6 +336,54 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
             } else {
                 echo(json_encode(['response' => ['ID' => $user->getID()]]));
             }
+        }
+    }
+
+    public function refreshToken(): void {
+        if (!$this->authorizedUser) {
+            http_response_code(403);
+            echo(json_encode(['error' => 'Unauthorized']));
+            die;
+        }
+        $accessToken = $_POST['accessToken'] ?? $_GET['accessToken'] ?? null;
+        if (!$accessToken) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Token can\'t be refreshed if you are authorized by session ID']));
+            die;
+        }
+
+        $newToken = $this->authorizedUser->refreshAccessToken();
+        if ($newToken) {
+            http_response_code(200);
+            echo(json_encode(['response' => $newToken]));
+        } else {
+            http_response_code(500);
+            echo(json_encode(['error' => 'Query can not be executed']));
+            die;
+        }
+    }
+
+    public function revokeToken(): void {
+        if (!$this->authorizedUser) {
+            http_response_code(403);
+            echo(json_encode(['error' => 'Unauthorized']));
+            die;
+        }
+        $accessToken = $_POST['accessToken'] ?? $_GET['accessToken'] ?? null;
+        if (!$accessToken) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Token can\'t be revoked if you are authorized by session ID']));
+            die;
+        }
+
+        $success = $this->authorizedUser->revokeAccessToken();
+        if ($success) {
+            http_response_code(200);
+            echo(json_encode(['response' => 'Success']));
+        } else {
+            http_response_code(500);
+            echo(json_encode(['error' => 'Query can not be executed']));
+            die;
         }
     }
 
