@@ -4,11 +4,12 @@
 class UserCreator extends EntityCreator {
 
     protected function constructObject(array $row): User {
-        return new User($row['ID'], $row['accessToken'], $row['accessTokenExpiration'], $row['activationStatus'], $row['activationTokenHash'],
-            $row['administrator'], $row['moderator'], $row['privacy'], $row['nickname'], $row['email'],
-            $row['emailPrivacy'], $row['passwordHash'], $row['salt'], $row['registrationDate'], $row['balance'],
-            $row['balancePrivacy'], $row['avatar'], $row['birthday'], $row['location'], $row['bio'], $row['likes'],
-            $row['comments'], $row['paidOrders'], $row['lastSeenTime'], $row['lastSeenTimePrivacy']);
+        return new User($row['ID'], $row['accessToken'], $row['accessTokenExpiration'], $row['activationStatus'],
+            $row['activationTokenHash'], $row['administrator'], $row['moderator'], $row['privacy'],
+            $row['nickname'], $row['email'], $row['emailPrivacy'], $row['passwordHash'], $row['salt'],
+            $row['registrationDate'], $row['balance'], $row['balancePrivacy'], $row['avatar'], $row['birthday'],
+            $row['location'], $row['bio'], $row['upVotes'], $row['downVotes'], $row['comments'], $row['paidOrders'],
+            $row['lastSeenTime'], $row['lastSeenTimePrivacy']);
     }
 
     public function newInstanceByAccessToken(string $tokenHash): ?User {

@@ -22,7 +22,8 @@ class User extends Entity {
     protected ?DateTime $birthday;
     protected ?string $location;
     protected ?string $bio;
-    protected int $likes;
+    protected int $upVotes;
+    protected int $downVotes;
     protected int $comments;
     protected int $paidOrders;
     protected DateTime $lastSeenTime;
@@ -154,9 +155,9 @@ class User extends Entity {
 
     public function __construct(int $ID, ?string $accessToken, ?string $accessTokenExpiration, bool $isActivated, string $activationTokenHash,
                                 bool $isAdmin, bool $contentCreator, bool $privacy, string $nickname, string $email,
-                                bool $emailPrivacy, string $passwordHash, string  $salt, string $registrationDate,
+                                bool $emailPrivacy, string $passwordHash, string $salt, string $registrationDate,
                                 int $balance, bool $balancePrivacy, bool $avatar, ?string $birthday, ?string $location,
-                                ?string $bio, int $likes, int $comments, int $paidOrders, string $lastSeenTime,
+                                ?string $bio, int $upVotes, int $downVotes, int $comments, int $paidOrders, string $lastSeenTime,
                                 bool $lastSeenTimePrivacy) {
         parent::__construct($ID);
         $this->accessToken = $accessToken;
@@ -194,7 +195,8 @@ class User extends Entity {
         }
         $this->location = $location;
         $this->bio = $bio;
-        $this->likes = $likes;
+        $this->upVotes = $upVotes;
+        $this->downVotes = $downVotes;
         $this->comments = $comments;
         $this->paidOrders = $paidOrders;
         try {
@@ -226,7 +228,8 @@ class User extends Entity {
             'birthday' => $this->birthday ? $this->birthday->format('Y.m.d H:i:s') : null,
             'location' => $this->location,
             'bio' => $this->bio,
-            'likes' => $this->likes,
+            'upVotes' => $this->upVotes,
+            'downVotes' => $this->downVotes,
             'comments' => $this->comments,
             'paidOrders' => $this->paidOrders,
             'lastSeenTime' => $this->lastSeenTime->format('Y.m.d H:i:s'),
