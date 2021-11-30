@@ -20,4 +20,6 @@ abstract class Entity {
         return ['ID' => $this->ID];
     }
 
+    public abstract function table(): string;
+
 }

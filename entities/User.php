@@ -207,6 +207,10 @@ class User extends Entity {
         $this->lastSeenTimePrivacy = $lastSeenTimePrivacy;
     }
 
+    public function table(): string {
+        return TABLE_USER;
+    }
+
     public function toArray(): array {
         return array_merge(parent::toArray(), [
             'accessToken' => $this->accessToken,

@@ -30,6 +30,10 @@ class News extends AssessableEntity {
         $this->comments = $comments;
     }
 
+    public function table(): string {
+        return TABLE_NEWS;
+    }
+
     protected function changeRating(int $newRating): bool {
         $query = 'UPDATE news SET rating = :rating WHERE ID = ' . $this->ID ;
         $result = $this->db->prepare($query);
