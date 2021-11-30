@@ -1,7 +1,7 @@
 <?php
 
 
-class News extends LikableEntity {
+class News extends AssessableEntity {
 
     protected int $authorID;
     protected bool $privacy;
@@ -13,9 +13,9 @@ class News extends LikableEntity {
     protected int $comments;
 
 
-    public function __construct(int $ID, int $authorID, bool $privacy, bool $isImportant, string $title,
-                                string $content, string $publicationDate, int $views, string $likes, int $comments) {
-        parent::__construct($ID, $likes);
+    public function __construct(int    $ID, int $authorID, bool $privacy, bool $isImportant, string $title,
+                                string $content, string $publicationDate, int $views, string $rating, int $comments) {
+        parent::__construct($ID, $rating);
         $this->authorID = $authorID;
         $this->privacy = $privacy;
         $this->isImportant = $isImportant;
@@ -30,7 +30,11 @@ class News extends LikableEntity {
         $this->comments = $comments;
     }
 
-    public function likeBy(User $user) {
-
+    protected function changeRating(int $newRating): bool {
+        $query = 'UPDATE news SET rating = :rating WHERE ID = ' . $this->ID ;
+        $result = $this->db->prepare($query);
+        $result->bindParam(':rating', $newRating, PDO::PARAM_INT);
+        return $result->execute();
     }
+
 }
