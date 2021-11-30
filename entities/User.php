@@ -366,4 +366,25 @@ class User extends Entity {
             return null;
         }
     }
+
+    protected function setVotes(int $votes, bool $voteType): bool {
+        if ($this->db->query('UPDATE ' . $this->table() . ' SET ' . ($voteType ? 'up' : 'down') . 'Votes = ' . $votes . ' WHERE ID = ' . $this->ID)) {
+            if ($voteType) {
+                $this->upVotes = $votes;
+            } else {
+                $this->downVotes = $votes;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public function increaseVotes(bool $voteType): bool {
+        return $this->setVotes(($voteType ? $this->upVotes : $this->downVotes) + 1, $voteType);
+    }
+
+    public function decreaseVotes(bool $voteType): bool {
+        return $this->setVotes(($voteType ? $this->upVotes : $this->downVotes) - 1, $voteType);
+    }
+
 }
