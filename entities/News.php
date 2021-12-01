@@ -49,4 +49,8 @@ class News extends AssessableEntity {
         return $this->privacy;
     }
 
+    public function getAuthorID(): int {
+        return $this->authorID;
+    }
+
 }
