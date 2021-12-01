@@ -69,7 +69,23 @@ class NewsAPI extends API implements Retrievable, Assessable {
     }
 
     public function getAll(): void {
+        $newsObjList = $this->creator->allInstances();
+        $newsList = [];
 
+        foreach ($newsObjList as $news) {
+            $add = true;
+            if (!$news->getPrivacy()) {
+                if (!($this->authorizedUser && ($this->authorizedUser->isAdministrator() || $this->authorizedUser->getID() == $news->getAuthorID()))) {
+                    $add = false;
+                }
+            }
+            if ($add) {
+                $newsList[] = $news->toArray();
+            }
+        }
+
+        http_response_code(200);
+        echo(json_encode(['response'=>$newsList]));
     }
 
     public function vote(): void {
