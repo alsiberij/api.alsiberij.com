@@ -146,7 +146,7 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
         $email = $_POST['email'] ?? $_GET['email'] ?? '';
         $password = $_POST['password'] ?? $_GET['password'] ?? '';
 
-        $error = $this->creator::create($nickname, $email, $password);
+        $error = $this->creator->create($nickname, $email, $password);
 
         if ($error) {
             http_response_code(400);
@@ -196,12 +196,11 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
                 echo(json_encode(['error' => 'Missing parameter: deleteToken']));
                 die;
             }
-            if (!$this->creator::delete($this->authorizedUser, $deleteToken)) {
+            if (!$this->creator->delete($this->authorizedUser, $deleteToken)) {
                 http_response_code(400);
                 echo(json_encode(['error' => 'Invalid deleteToken']));
                 die;
             }
-
             http_response_code(200);
             echo(json_encode(['response' => 'Success']));
         } else {

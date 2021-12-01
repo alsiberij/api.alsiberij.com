@@ -3,7 +3,7 @@
 
 class UserCreator extends EntityCreator {
 
-    public static function create(string $nickname, string $email, string $password):  string {
+    public function create(string $nickname, string $email, string $password):  string {
         $nicknameError = User::validateNickname($nickname);
         if ($nicknameError) {
             return $nicknameError;
@@ -19,7 +19,7 @@ class UserCreator extends EntityCreator {
         }
 
         $query = 'INSERT INTO users (activationTokenHash, nickname, email, passwordHash, salt) VALUES (:activationToken, :nickname, :email, :password, :salt);';
-        $result = DB::getConnection()->prepare($query);
+        $result = $this->db->prepare($query);
         $activationToken = User::generateActivationToken();
         $activationTokenHash = User::calculateActivationTokenHash($activationToken);
         $result->bindParam(':activationToken', $activationTokenHash);
@@ -53,12 +53,12 @@ class UserCreator extends EntityCreator {
         return '';
     }
 
-    public static function delete(User $user, string $deleteToken): bool {
+    public function delete(User $user, string $deleteToken): bool {
         if ($user->getDeletionToken() != $deleteToken) {
             return false;
         }
         $query = 'DELETE FROM users WHERE ID = :ID';
-        $result = DB::getConnection()->prepare($query);
+        $result = $this->db->prepare($query);
         $userID = $user->getID();
         $result->bindParam(':ID', $userID);
         if (!$result->execute()) {
