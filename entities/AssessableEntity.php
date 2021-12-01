@@ -10,6 +10,12 @@ abstract class AssessableEntity extends Entity {
         $this->rating = $voteRating;
     }
 
+    public function toArray(): array {
+        return array_merge(parent::toArray(), [
+            'rating' => $this->rating
+        ]);
+    }
+
     public abstract function changeRating(int $newRating): bool;
 
     public final function upVote(): bool {
