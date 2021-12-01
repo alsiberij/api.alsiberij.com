@@ -1,6 +1,6 @@
 <?php
 
-class NewsVoteCreator extends EntityCreator {
+class NewsVoteCreator extends VoteCreator {
 
     protected function constructObject(array $row): NewsVote {
         return new NewsVote($row['ID'], $row['resourceID'], $row['userID'], $row['voteType']);
