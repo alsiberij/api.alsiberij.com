@@ -23,4 +23,8 @@ abstract class Vote extends Entity {
         return $result->execute();
     }
 
+    public function getVoteType(): bool {
+        return $this->voteType;
+    }
+
 }
