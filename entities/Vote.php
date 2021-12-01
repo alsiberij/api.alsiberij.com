@@ -20,7 +20,11 @@ abstract class Vote extends Entity {
         $result = $this->db->prepare($query);
         $newVoteType = !$this->voteType;
         $result->bindParam(':voteType', $newVoteType, PDO::PARAM_BOOL);
-        return $result->execute();
+        $success = $result->execute();
+        if ($success) {
+            $this->voteType = $newVoteType;
+        }
+        return $success;
     }
 
     public function getVoteType(): bool {
