@@ -10,7 +10,7 @@ abstract class AssessableEntity extends Entity {
         $this->rating = $voteRating;
     }
 
-    protected abstract function changeRating(int $newRating): bool;
+    public abstract function changeRating(int $newRating): bool;
 
     public final function upVote(): bool {
         return $this->changeRating($this->rating + 1);
