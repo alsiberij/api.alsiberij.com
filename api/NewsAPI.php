@@ -32,7 +32,40 @@ class NewsAPI extends API implements Retrievable, Assessable {
     }
 
     public function get(): void {
+        $rawNewsIDs = $_POST['newsIDs'] ?? $_GET['newsIDs'] ?? '';
+        $newsIDs = explode(',', $rawNewsIDs);
 
+        $error = false;
+        foreach ($newsIDs as $newsID) {
+            if (!is_numeric($newsID)) {
+                $error = true;
+                break;
+            }
+        }
+        if (empty($newsIDs) || $error) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Invalid parameter: newsID']));
+            die;
+        }
+
+        $newsList = [];
+        foreach ($newsIDs as $newsID) {
+            $news = $this->creator->newInstance($newsID);
+            if ($news) {
+                $hasAccess = false;
+                if ($news->getPrivacy() || $this->authorizedUser &&
+                    ($this->authorizedUser->getID() == $news->getAuthorID() || $this->authorizedUser->isAdministrator())) {
+                    $hasAccess = true;
+                }
+
+                if ($hasAccess) {
+                    $newsList[] = $news->toArray();
+                }
+            }
+        }
+
+        http_response_code(200);
+        echo(json_encode(['response'=>$newsList]));
     }
 
     public function getAll(): void {
