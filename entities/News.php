@@ -45,4 +45,8 @@ class News extends AssessableEntity {
         return $success;
     }
 
+    public function getPrivacy(): bool {
+        return $this->privacy;
+    }
+
 }
