@@ -2,6 +2,11 @@
 
 class NewsAPI extends API implements Retrievable {
 
+    public function __construct() {
+        parent::__construct();
+        $this->creator = new NewsCreator();
+    }
+
     public function respond(string $methodName): void {
         switch ($methodName) {
             case 'get': {
