@@ -34,6 +34,19 @@ class News extends AssessableEntity {
         return TABLE_NEWS;
     }
 
+    public function toArray(): array {
+        return array_merge(parent::toArray(), [
+            'authorID' => $this->authorID,
+            'privacy' => $this->privacy,
+            'importance' => $this->isImportant,
+            'title' => $this->title,
+            'content' => $this->content,
+            'publicationDate' => $this->publicationDate->format('Y.m.d H:i:s'),
+            'views' => $this->views,
+            'comments' => $this->comments
+        ]);
+    }
+
     public function changeRating(int $newRating): bool {
         $query = 'UPDATE ' . $this->table() . ' SET rating = :rating WHERE ID = ' . $this->ID ;
         $result = $this->db->prepare($query);
