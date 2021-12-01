@@ -35,10 +35,14 @@ class News extends AssessableEntity {
     }
 
     protected function changeRating(int $newRating): bool {
-        $query = 'UPDATE news SET rating = :rating WHERE ID = ' . $this->ID ;
+        $query = 'UPDATE ' . $this->table() . ' SET rating = :rating WHERE ID = ' . $this->ID ;
         $result = $this->db->prepare($query);
         $result->bindParam(':rating', $newRating, PDO::PARAM_INT);
-        return $result->execute();
+        $success = $result->execute();
+        if ($success) {
+            $this->rating = $newRating;
+        }
+        return $success;
     }
 
 }
