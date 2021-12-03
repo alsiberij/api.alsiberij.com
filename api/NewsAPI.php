@@ -1,7 +1,7 @@
 <?php
 
 
-class NewsAPI extends API implements Retrievable, Assessable {
+class NewsAPI extends API implements Retrievable, Assessable, Creatable {
 
     public function __construct() {
         parent::__construct();
@@ -16,6 +16,14 @@ class NewsAPI extends API implements Retrievable, Assessable {
             }
             case 'getAll': {
                 $this->getAll();
+                return;
+            }
+            case 'create': {
+                $this->create();
+                return;
+            }
+            case 'delete': {
+                $this->delete();
                 return;
             }
             case 'vote': {
@@ -138,4 +146,69 @@ class NewsAPI extends API implements Retrievable, Assessable {
         echo(json_encode(['response' => $resource->getRating()]));
     }
 
+    public function create(): void {
+        if (!($this->authorizedUser && ($this->authorizedUser->isAdministrator() || $this->authorizedUser->isModerator()))) {
+            http_response_code(403);
+            echo(json_encode(['error' => 'Access denied']));
+            die;
+        }
+
+        $privacy = $_POST['privacy'] ?? $_GET['privacy'] ?? '1';
+        if ($privacy != '1' && $privacy != '0') {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Invalid parameter: privacy']));
+            die;
+        }
+        $privacy = $privacy == '1';
+        $importance = $_POST['importance'] ?? $_GET['importance'] ?? '0';
+        if ($importance != '1' && $importance != '0') {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Invalid parameter: importance']));
+            die;
+        }
+        $importance = $importance == '1';
+        $title = $_POST['title'] ?? $_GET['title'] ?? '';
+        $content = $_POST['content'] ?? $_GET['content'] ?? '';
+
+        $error = $this->creator->create($this->authorizedUser, $privacy, $importance, $title, $content);
+
+        if ($error) {
+            http_response_code(400);
+            echo(json_encode(['error' => $error]));
+            die;
+        }
+
+        http_response_code(200);
+        echo(json_encode(['response' => 'Success']));
+    }
+
+    public function delete(): void {
+        $newsID = $_POST['newsID'] ?? $_GET['newsID'] ?? '';
+        if (!$newsID) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Missing parameter: newsID']));
+            die;
+        }
+        if (!is_numeric($newsID)) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Invalid parameter: newsID']));
+            die;
+        }
+        $resource = $this->creator->newInstance($newsID);
+        if (!$resource) {
+            http_response_code(404);
+            echo(json_encode(['error' => 'Resource not found']));
+            die;
+        }
+
+        if (!($this->authorizedUser && ($this->authorizedUser->isAdministrator() || ($this->authorizedUser->isModerator() && $this->authorizedUser->getID() == $resource->getAuthorID())))) {
+            http_response_code(403);
+            echo(json_encode(['error' => 'Access denied']));
+            die;
+        }
+
+        $this->creator->delete($resource);
+        http_response_code(200);
+        echo(json_encode(['response' => 'Success']));
+    }
 }
