@@ -151,6 +151,7 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
         if ($error) {
             http_response_code(400);
             echo(json_encode(['error' => $error]));
+            die;
         }
 
         http_response_code(200);
