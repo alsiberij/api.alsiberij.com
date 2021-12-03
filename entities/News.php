@@ -12,6 +12,28 @@ class News extends AssessableEntity {
     protected int $views;
     protected int $comments;
 
+    public const TITLE_MIN_LENGTH = 3;
+    public const TITLE_MAX_LENGTH = 255;
+
+    public const CONTENT_MIN_LENGTH = 3;
+    public const CONTENT_MAX_LENGTH = 2048;
+
+    public static function validateTitle(string $title): string {
+        $error = '';
+        if (mb_strlen($title) < self::TITLE_MIN_LENGTH || mb_strlen($title) > self::TITLE_MAX_LENGTH) {
+            $error = 'Invalid title length';
+        }
+        return $error;
+    }
+
+    public static function validateContent(string $content): string {
+        $error = '';
+        if (mb_strlen($content) < self::CONTENT_MIN_LENGTH || mb_strlen($content) > self::CONTENT_MAX_LENGTH) {
+            $error = 'Invalid content length';
+        }
+        return $error;
+    }
+
 
     public function __construct(int    $ID, int $authorID, bool $privacy, bool $isImportant, string $title,
                                 string $content, string $publicationDate, int $views, string $rating, int $comments) {
