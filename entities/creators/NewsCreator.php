@@ -29,6 +29,19 @@ class NewsCreator extends EntityCreator {
         return '';
     }
 
+    public function delete(News $resource): bool {
+        $query = 'DELETE FROM ' . $this->table() . ' WHERE ID = :ID';
+        $result = $this->db->prepare($query);
+        $newsID = $resource->getID();
+        $result->bindParam(':ID', $newsID);
+        if (!$result->execute()) {
+            http_response_code(500);
+            echo(json_encode(['error' => 'Query can not be executed']));
+            die;
+        }
+        return true;
+    }
+
     protected function constructObject(array $row): News {
         return new News($row['ID'], $row['authorID'], $row['privacy'], $row['importance'], $row['title'],
             $row['content'], $row['publicationDate'], $row['views'], $row['rating'], $row['comments']);
