@@ -374,15 +374,18 @@ class User extends Entity {
     }
 
     protected function setVotes(int $votes, bool $voteType): bool {
-        if ($this->db->query('UPDATE ' . $this->table() . ' SET ' . ($voteType ? 'up' : 'down') . 'Votes = ' . $votes . ' WHERE ID = ' . $this->ID)) {
-            if ($voteType) {
-                $this->upVotes = $votes;
-            } else {
-                $this->downVotes = $votes;
-            }
-            return true;
+        $query = 'UPDATE ' . $this->table() . ' SET ' . ($voteType ? 'up' : 'down') . 'Votes = :votes WHERE ID = ' . $this->ID;
+        $result = $this->db->prepare($query);
+        $result->bindParam(':votes', $votes, PDO::PARAM_INT);
+        if (!$result->execute()) {
+            return false;
         }
-        return false;
+        if ($voteType) {
+            $this->upVotes = $votes;
+        } else {
+            $this->downVotes = $votes;
+        }
+        return true;
     }
 
     public function increaseVotes(bool $voteType): bool {
