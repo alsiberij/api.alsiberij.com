@@ -42,7 +42,6 @@ class NewsAPI extends API implements Retrievable, Assessable, Creatable {
     public function get(): void {
         $rawNewsIDs = $_POST['newsIDs'] ?? $_GET['newsIDs'] ?? '';
         $newsIDs = explode(',', $rawNewsIDs);
-
         $error = false;
         foreach ($newsIDs as $newsID) {
             if (!is_numeric($newsID)) {
@@ -65,13 +64,11 @@ class NewsAPI extends API implements Retrievable, Assessable, Creatable {
                     ($this->authorizedUser->getID() == $news->getAuthorID() || $this->authorizedUser->isAdministrator())) {
                     $hasAccess = true;
                 }
-
                 if ($hasAccess) {
                     $newsList[] = $news->toArray();
                 }
             }
         }
-
         http_response_code(200);
         echo(json_encode(['response'=>$newsList]));
     }
@@ -79,7 +76,6 @@ class NewsAPI extends API implements Retrievable, Assessable, Creatable {
     public function getAll(): void {
         $newsObjList = $this->creator->allInstances();
         $newsList = [];
-
         foreach ($newsObjList as $news) {
             $add = true;
             if (!$news->getPrivacy()) {
@@ -91,7 +87,6 @@ class NewsAPI extends API implements Retrievable, Assessable, Creatable {
                 $newsList[] = $news->toArray();
             }
         }
-
         http_response_code(200);
         echo(json_encode(['response'=>$newsList]));
     }
@@ -106,7 +101,6 @@ class NewsAPI extends API implements Retrievable, Assessable, Creatable {
         $resourceID = $_POST['resourceID'] ?? $_GET['resourceID'] ?? '';
         $voteType = $_POST['voteType'] ?? $_GET['voteType'] ?? '';
         $voteType = strtolower($voteType);
-
         if (!$resourceID || !is_numeric($resourceID)) {
             http_response_code(400);
             echo(json_encode(['error' => 'Missing parameter: resourceID']));
@@ -123,7 +117,6 @@ class NewsAPI extends API implements Retrievable, Assessable, Creatable {
             echo(json_encode(['error' => 'Access denied']));
             die;
         }
-
         if (!$voteType) {
             http_response_code(400);
             echo(json_encode(['error' => 'Missing parameter: voteType']));
@@ -133,7 +126,6 @@ class NewsAPI extends API implements Retrievable, Assessable, Creatable {
             echo(json_encode(['error' => 'Invalid parameter: voteType']));
             die;
         }
-
         $voteType = $voteType == 'up';
 
         $success = (new NewsVoteCreator())->create($resource, $this->authorizedUser, $voteType);
@@ -171,13 +163,11 @@ class NewsAPI extends API implements Retrievable, Assessable, Creatable {
         $content = $_POST['content'] ?? $_GET['content'] ?? '';
 
         $error = $this->creator->create($this->authorizedUser, $privacy, $importance, $title, $content);
-
         if ($error) {
             http_response_code(400);
             echo(json_encode(['error' => $error]));
             die;
         }
-
         http_response_code(200);
         echo(json_encode(['response' => 'Success']));
     }
