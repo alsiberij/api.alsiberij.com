@@ -98,7 +98,7 @@ class User extends Entity {
     }
 
     private static function validateSalt(string $salt): bool {
-        $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE salt = :salt');
+        $result = DB::getConnection()->prepare('SELECT ID FROM ' . TABLE_USER . ' WHERE salt = :salt');
         $result->bindParam(':salt', $salt);
         if (!$result->execute()) {
             http_response_code(500);
@@ -124,7 +124,7 @@ class User extends Entity {
 
     private static function validateActivationToken(string $token): bool {
         $tokenHash = self::calculateActivationTokenHash($token);
-        $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE activationTokenHash = :token');
+        $result = DB::getConnection()->prepare('SELECT ID FROM ' . TABLE_USER . ' WHERE activationTokenHash = :token');
         $result->bindParam(':token', $tokenHash);
         if (!$result->execute()) {
             http_response_code(500);
@@ -283,7 +283,7 @@ class User extends Entity {
 
     public function activate(): bool {
         if (!$this->isActivated) {
-            if ($this->db->query('UPDATE ' . TABLE_USER . ' SET activationStatus = 1 WHERE ID = ' . $this->ID)) {
+            if ($this->db->query('UPDATE ' . $this->table() . ' SET activationStatus = 1 WHERE ID = ' . $this->ID)) {
                 return true;
             } else {
                 return false;
@@ -298,7 +298,7 @@ class User extends Entity {
     }
 
     protected function validateAccessToken(string $token): bool {
-        $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE accessToken = :token');
+        $result = DB::getConnection()->prepare('SELECT ID FROM ' . $this->table() . ' WHERE accessToken = :token');
         $result->bindParam(':token', $token);
         if (!$result->execute()) {
             http_response_code(500);
