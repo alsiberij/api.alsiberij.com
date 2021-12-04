@@ -22,7 +22,8 @@ class User extends Entity {
     protected ?DateTime $birthday;
     protected ?string $location;
     protected ?string $bio;
-    protected int $likes;
+    protected int $upVotes;
+    protected int $downVotes;
     protected int $comments;
     protected int $paidOrders;
     protected DateTime $lastSeenTime;
@@ -97,7 +98,7 @@ class User extends Entity {
     }
 
     private static function validateSalt(string $salt): bool {
-        $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE salt = :salt');
+        $result = DB::getConnection()->prepare('SELECT ID FROM ' . TABLE_USER . ' WHERE salt = :salt');
         $result->bindParam(':salt', $salt);
         if (!$result->execute()) {
             http_response_code(500);
@@ -123,7 +124,7 @@ class User extends Entity {
 
     private static function validateActivationToken(string $token): bool {
         $tokenHash = self::calculateActivationTokenHash($token);
-        $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE activationTokenHash = :token');
+        $result = DB::getConnection()->prepare('SELECT ID FROM ' . TABLE_USER . ' WHERE activationTokenHash = :token');
         $result->bindParam(':token', $tokenHash);
         if (!$result->execute()) {
             http_response_code(500);
@@ -154,9 +155,9 @@ class User extends Entity {
 
     public function __construct(int $ID, ?string $accessToken, ?string $accessTokenExpiration, bool $isActivated, string $activationTokenHash,
                                 bool $isAdmin, bool $contentCreator, bool $privacy, string $nickname, string $email,
-                                bool $emailPrivacy, string $passwordHash, string  $salt, string $registrationDate,
+                                bool $emailPrivacy, string $passwordHash, string $salt, string $registrationDate,
                                 int $balance, bool $balancePrivacy, bool $avatar, ?string $birthday, ?string $location,
-                                ?string $bio, int $likes, int $comments, int $paidOrders, string $lastSeenTime,
+                                ?string $bio, int $upVotes, int $downVotes, int $comments, int $paidOrders, string $lastSeenTime,
                                 bool $lastSeenTimePrivacy) {
         parent::__construct($ID);
         $this->accessToken = $accessToken;
@@ -194,7 +195,8 @@ class User extends Entity {
         }
         $this->location = $location;
         $this->bio = $bio;
-        $this->likes = $likes;
+        $this->upVotes = $upVotes;
+        $this->downVotes = $downVotes;
         $this->comments = $comments;
         $this->paidOrders = $paidOrders;
         try {
@@ -203,6 +205,10 @@ class User extends Entity {
             $this->lastSeenTime = new DateTime();
         }
         $this->lastSeenTimePrivacy = $lastSeenTimePrivacy;
+    }
+
+    public function table(): string {
+        return TABLE_USER;
     }
 
     public function toArray(): array {
@@ -226,7 +232,8 @@ class User extends Entity {
             'birthday' => $this->birthday ? $this->birthday->format('Y.m.d H:i:s') : null,
             'location' => $this->location,
             'bio' => $this->bio,
-            'likes' => $this->likes,
+            'upVotes' => $this->upVotes,
+            'downVotes' => $this->downVotes,
             'comments' => $this->comments,
             'paidOrders' => $this->paidOrders,
             'lastSeenTime' => $this->lastSeenTime->format('Y.m.d H:i:s'),
@@ -274,9 +281,9 @@ class User extends Entity {
         return $this->isActivated;
     }
 
-    public function activate(): bool {
+    public function activate(PDO $db): bool {
         if (!$this->isActivated) {
-            if ($this->db->query('UPDATE ' . TABLE_USER . ' SET activationStatus = 1 WHERE ID = ' . $this->ID)) {
+            if ($db->query('UPDATE ' . $this->table() . ' SET activationStatus = 1 WHERE ID = ' . $this->ID)) {
                 return true;
             } else {
                 return false;
@@ -291,7 +298,7 @@ class User extends Entity {
     }
 
     protected function validateAccessToken(string $token): bool {
-        $result = DB::getConnection()->prepare('SELECT ID FROM users WHERE accessToken = :token');
+        $result = DB::getConnection()->prepare('SELECT ID FROM ' . $this->table() . ' WHERE accessToken = :token');
         $result->bindParam(':token', $token);
         if (!$result->execute()) {
             http_response_code(500);
@@ -315,33 +322,39 @@ class User extends Entity {
         return $token;
     }
 
-    public function getAccessToken(): ?array {
+    public function getAccessToken(PDO $db): ?array {
         if (!$this->isAccessTokenExpired()) {
             return ['accessToken' => $this->accessToken, 'expiresIn' => $this->accessTokenExpiration->getTimestamp()];
         }
         $token = $this->generateAccessToken();
-        $success = $this->db->query('UPDATE users SET accessToken = \'' . $token . '\' WHERE ID = ' . $this->ID);
-        if ($success) {
+        try {
+            $db->beginTransaction();
+            $db->query('UPDATE users SET accessToken = \'' . $token . '\' WHERE ID = ' . $this->ID);
             $expiration = time() + ACCESS_TOKEN_LIFETIME;
-            $this->db->query('UPDATE users SET accessTokenExpiration = \'' . date('Y-m-d H:i:s', $expiration) . '\' WHERE ID = ' . $this->ID);
+            $db->query('UPDATE users SET accessTokenExpiration = \'' . date('Y-m-d H:i:s', $expiration) . '\' WHERE ID = ' . $this->ID);
+            $db->commit();
             $this->accessToken = $token;
             $this->accessTokenExpiration = (new DateTime())->setTimestamp($expiration);
             return ['accessToken' => $token, 'expiresIn' => $expiration];
-        } else {
+        } catch (PDOException $ex) {
+            $db->rollBack();
             return null;
         }
     }
 
-    public function revokeAccessToken(): bool {
-        $successTokenDeletion = $this->db->query('UPDATE users SET accessToken = NULL WHERE ID = ' . $this->ID);
-        if ($successTokenDeletion) {
+    public function revokeAccessToken(PDO $db): bool {
+        try {
+            $db->beginTransaction();
+            $db->query('UPDATE users SET accessToken = NULL WHERE ID = ' . $this->ID);
+            $db->query('UPDATE users SET accessTokenExpiration = NULL WHERE ID = ' . $this->ID);
+            $db->commit();
             $this->accessToken = null;
-        }
-        $successExpirationDeletion = $this->db->query('UPDATE users SET accessTokenExpiration = NULL WHERE ID = ' . $this->ID);
-        if ($successExpirationDeletion) {
             $this->accessTokenExpiration = null;
+            return true;
+        } catch (PDOException $ex) {
+            $db->rollBack();
+            return false;
         }
-        return $successTokenDeletion && $successExpirationDeletion;
     }
 
     public function isAccessTokenExpired(): bool {
@@ -352,11 +365,35 @@ class User extends Entity {
         }
     }
 
-    public function refreshAccessToken(): ?array {
-        if ($this->revokeAccessToken()) {
-            return $this->getAccessToken();
+    public function refreshAccessToken(PDO $db): ?array {
+        if ($this->revokeAccessToken($db)) {
+            return $this->getAccessToken($db);
         } else {
             return null;
         }
     }
+
+    protected function setVotes(PDO $db, int $votes, bool $voteType): bool {
+        $query = 'UPDATE ' . $this->table() . ' SET ' . ($voteType ? 'up' : 'down') . 'Votes = :votes WHERE ID = ' . $this->ID;
+        $result = $db->prepare($query);
+        $result->bindParam(':votes', $votes, PDO::PARAM_INT);
+        if (!$result->execute()) {
+            return false;
+        }
+        if ($voteType) {
+            $this->upVotes = $votes;
+        } else {
+            $this->downVotes = $votes;
+        }
+        return true;
+    }
+
+    public function increaseVotes(PDO $db, bool $voteType): bool {
+        return $this->setVotes($db, ($voteType ? $this->upVotes : $this->downVotes) + 1, $voteType);
+    }
+
+    public function decreaseVotes(PDO $db, bool $voteType): bool {
+        return $this->setVotes($db, ($voteType ? $this->upVotes : $this->downVotes) - 1, $voteType);
+    }
+
 }

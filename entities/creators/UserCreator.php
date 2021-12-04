@@ -3,16 +3,91 @@
 
 class UserCreator extends EntityCreator {
 
+    public function insert(string $nickname, string $email, string $password):  string {
+        $nicknameError = User::validateNickname($nickname);
+        if ($nicknameError) {
+            return $nicknameError;
+        }
+        $email = strtolower($email);
+        $emailError = User::validateEmail($email, true);
+        if ($emailError) {
+            return $emailError;
+        }
+        $passwordError = User::validatePassword($password);
+        if ($passwordError) {
+            return $passwordError;
+        }
+
+        $query = 'INSERT INTO users (activationTokenHash, nickname, email, passwordHash, salt) VALUES (:activationToken, :nickname, :email, :password, :salt);';
+        $result = $this->db->prepare($query);
+        $activationToken = User::generateActivationToken();
+        $activationTokenHash = User::calculateActivationTokenHash($activationToken);
+        $result->bindParam(':activationToken', $activationTokenHash);
+        $result->bindParam(':nickname', $nickname);
+        $result->bindParam(':email', $email);
+        $salt = User::generateSalt();
+        $passwordHash = User::generatePasswordHash($password, $salt);
+        $result->bindParam(':password', $passwordHash);
+        $result->bindParam(':salt', $salt);
+        if (!$result->execute()) {
+            http_response_code(500);
+            echo(json_encode(['error' => 'Query can not be executed']));
+            die;
+        }
+
+        $msg = "
+                <body>
+                    <table>
+                        <tr>
+                        <td>Премногоуважаемый(ая) <b>$nickname</b> <br>Ваш токен активации аккаунта $activationToken .</td>
+                        </tr> 
+                    </table>
+                </body>
+        ";
+        $from = 'From: '. EMAIL . '\r\n';
+        if (!mail($email, 'Регистрация', $msg, $from)) {
+            http_response_code(500);
+            echo(json_encode(['error' => 'Email can\'t be sent']));
+            die;
+        }
+        return '';
+    }
+
+    public function delete(User $user, string $deleteToken): bool {
+        if ($user->getDeletionToken() != $deleteToken) {
+            return false;
+        }
+        $query = 'DELETE FROM users WHERE ID = :ID';
+        $result = $this->db->prepare($query);
+        $userID = $user->getID();
+        $result->bindParam(':ID', $userID);
+        if (!$result->execute()) {
+            http_response_code(500);
+            echo(json_encode(['error' => 'Query can not be executed']));
+            die;
+        }
+        return true;
+    }
+
     protected function constructObject(array $row): User {
-        return new User($row['ID'], $row['accessToken'], $row['accessTokenExpiration'], $row['activationStatus'], $row['activationTokenHash'],
-            $row['administrator'], $row['moderator'], $row['privacy'], $row['nickname'], $row['email'],
-            $row['emailPrivacy'], $row['passwordHash'], $row['salt'], $row['registrationDate'], $row['balance'],
-            $row['balancePrivacy'], $row['avatar'], $row['birthday'], $row['location'], $row['bio'], $row['likes'],
-            $row['comments'], $row['paidOrders'], $row['lastSeenTime'], $row['lastSeenTimePrivacy']);
+        return new User($row['ID'], $row['accessToken'], $row['accessTokenExpiration'], $row['activationStatus'],
+            $row['activationTokenHash'], $row['administrator'], $row['moderator'], $row['privacy'],
+            $row['nickname'], $row['email'], $row['emailPrivacy'], $row['passwordHash'], $row['salt'],
+            $row['registrationDate'], $row['balance'], $row['balancePrivacy'], $row['avatar'], $row['birthday'],
+            $row['location'], $row['bio'], $row['upVotes'], $row['downVotes'], $row['comments'], $row['paidOrders'],
+            $row['lastSeenTime'], $row['lastSeenTimePrivacy']);
+    }
+
+    public function newInstance(int $ID): ?User {
+        return parent::newInstance($ID);
+    }
+
+    public function table(): string {
+        return TABLE_USER;
     }
 
     public function newInstanceByAccessToken(string $tokenHash): ?User {
-        $query = 'SELECT * FROM ' . TABLE_USER . ' WHERE accessToken = :token';
+        $query = 'SELECT * FROM ' . $this->table() . ' WHERE accessToken = :token';
         $result = $this->db->prepare($query);
         $result->bindParam(':token', $tokenHash);
         if (!$result->execute()) {
@@ -28,7 +103,7 @@ class UserCreator extends EntityCreator {
     }
 
     public function newInstanceByActivationToken(string $tokenHash): ?User {
-        $query = 'SELECT * FROM ' . TABLE_USER . ' WHERE activationTokenHash = :token';
+        $query = 'SELECT * FROM ' . $this->table() . ' WHERE activationTokenHash = :token';
         $result = $this->db->prepare($query);
         $result->bindParam(':token', $tokenHash);
         if (!$result->execute()) {
@@ -44,7 +119,7 @@ class UserCreator extends EntityCreator {
     }
 
     public function newInstanceByEmail(string $email): ?User {
-        $result = $this->db->prepare('SELECT * FROM ' . TABLE_USER . ' WHERE email = :email');
+        $result = $this->db->prepare('SELECT * FROM ' . $this->table() . ' WHERE email = :email');
         $result->bindParam(':email', $email);
         if (!$result->execute()) {
             http_response_code(500);
@@ -56,35 +131,6 @@ class UserCreator extends EntityCreator {
         } else {
             return null;
         }
-    }
-
-    public function newInstance(int $ID): ?User {
-        $result = $this->db->prepare('SELECT * FROM ' . TABLE_USER . ' WHERE ID = :ID');
-        $result->bindParam(':ID', $ID, PDO::PARAM_INT);
-        if (!$result->execute()) {
-            http_response_code(500);
-            echo(json_encode(['error'=>'Internal DB error']));
-            die;
-        }
-        if ($r = $result->fetch(PDO::FETCH_ASSOC)) {
-            return $this->constructObject($r);
-        } else {
-            return null;
-        }
-    }
-
-    public function allInstances(): array {
-        $result = $this->db->query('SELECT * FROM ' . TABLE_USER);
-        if (!$result->execute()) {
-            http_response_code(500);
-            echo(json_encode(['error'=>'Internal DB error']));
-            die;
-        }
-        $usersList = [];
-        while ($r = $result->fetch(PDO::FETCH_ASSOC)) {
-            $usersList[] = $this->constructObject($r);
-        }
-        return $usersList;
     }
 
 }

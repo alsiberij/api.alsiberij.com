@@ -4,12 +4,10 @@
 abstract class Entity {
 
     protected int $ID;
-    protected PDO $db;
 
 
     public function __construct(int $ID) {
         $this->ID = $ID;
-        $this->db = DB::getConnection();
     }
 
     public function getID(): int {
@@ -19,5 +17,7 @@ abstract class Entity {
     public function toArray(): array {
         return ['ID' => $this->ID];
     }
+
+    public abstract function table(): string;
 
 }

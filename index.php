@@ -6,6 +6,8 @@ const ROOT = __DIR__ . '/';
 const EMAIL = 'ceo@alsiberij.com';
 
 const TABLE_USER = 'users';
+const TABLE_NEWS = 'news';
+const TABLE_NEWS_VOTE = 'news_votes';
 
 spl_autoload_register(function(string $className): void {
     $folders = [
