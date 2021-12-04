@@ -112,7 +112,7 @@ class NewsAPI extends API implements Retrievable, Assessable, Creatable {
             echo(json_encode(['error' => 'Invalid parameter: resourceID']));
             die;
         }
-        if (!$resource->getPrivacy() && !$this->authorizedUser->isAdministrator() && !($this->authorizedUser->getID() == $resource->getAuthorID())) {
+        if (!$resource->getPrivacy() && !$this->authorizedUser->isAdministrator() && !($this->authorizedUser->isModerator() && $this->authorizedUser->getID() == $resource->getAuthorID())) {
             http_response_code(403);
             echo(json_encode(['error' => 'Access denied']));
             die;
