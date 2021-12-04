@@ -138,7 +138,7 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
         $email = $_POST['email'] ?? $_GET['email'] ?? '';
         $password = $_POST['password'] ?? $_GET['password'] ?? '';
 
-        $error = $this->creator->create($nickname, $email, $password);
+        $error = $this->creator->insert($nickname, $email, $password);
 
         if ($error) {
             http_response_code(400);

@@ -3,7 +3,7 @@
 
 class UserCreator extends EntityCreator {
 
-    public function create(string $nickname, string $email, string $password):  string {
+    public function insert(string $nickname, string $email, string $password):  string {
         $nicknameError = User::validateNickname($nickname);
         if ($nicknameError) {
             return $nicknameError;
