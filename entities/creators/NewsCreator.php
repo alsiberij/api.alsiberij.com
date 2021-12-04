@@ -3,7 +3,7 @@
 
 class NewsCreator extends EntityCreator {
 
-    public function create(User $author, bool $privacy, bool $importance, string $title, string $content): string {
+    public function insert(User $author, bool $privacy, bool $importance, string $title, string $content): string {
         $titleError = News::validateTitle($title);
         if ($titleError) {
             return $titleError;

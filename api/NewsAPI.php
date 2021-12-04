@@ -162,7 +162,7 @@ class NewsAPI extends API implements Retrievable, Assessable, Creatable {
         $title = $_POST['title'] ?? $_GET['title'] ?? '';
         $content = $_POST['content'] ?? $_GET['content'] ?? '';
 
-        $error = $this->creator->create($this->authorizedUser, $privacy, $importance, $title, $content);
+        $error = $this->creator->insert($this->authorizedUser, $privacy, $importance, $title, $content);
         if ($error) {
             http_response_code(400);
             echo(json_encode(['error' => $error]));
