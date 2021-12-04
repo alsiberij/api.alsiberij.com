@@ -73,25 +73,20 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
     }
 
     public function get(): void {
-        $rawUserIDs = $_POST['userIDs'] ?? $_GET['userIDs'] ?? null;
-        if (!$rawUserIDs) {
-            http_response_code(400);
-            echo(json_encode(['error' => 'Missing parameter: userIDs']));
-            die;
-        }
-        $userIDs = json_decode($rawUserIDs);
-        if (!$userIDs) {
-            http_response_code(400);
-            echo(json_encode(['error' => 'Invalid user IDs. Use JSON notation']));
-            die;
-        }
-        array_walk($userIDs, function (&$value, $key) {
-            if (!is_int($value)) {
-                http_response_code(400);
-                echo(json_encode(['error' => "Invalid user ID ($value)"]));
-                die;
+        $rawUserIDs = $_POST['userIDs'] ?? $_GET['userIDs'] ?? '';
+        $userIDs = explode(',', $rawUserIDs);
+        $error = false;
+        foreach ($userIDs as $userID) {
+            if (!is_numeric($userID)) {
+                $error = true;
+                break;
             }
-        });
+        }
+        if (empty($userIDs) || $error) {
+            http_response_code(400);
+            echo(json_encode(['error' => 'Invalid parameter: userIDs']));
+            die;
+        }
 
         $usersList = [];
         foreach ($userIDs as $userID) {
@@ -102,10 +97,8 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
                     ($this->authorizedUser->getID() == $user->getID() || $this->authorizedUser->isAdministrator())) {
                     $accessAllData = true;
                 }
-
-                $user = $user->toArray();
-
-                if ($accessAllData || ($user['activationStatus'] && $user['privacy'])) {
+                if ($accessAllData || ($user->isActivated() && $user->getPrivacy())) {
+                    $user = $user->toArray();
                     $this->handleUserData($user, $accessAllData);
                     $usersList[] = $user;
                 }
