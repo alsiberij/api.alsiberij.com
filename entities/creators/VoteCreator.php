@@ -9,7 +9,7 @@ abstract class VoteCreator extends EntityCreator {
             if ($vote->getVoteType() == $voteType) {
                 try {
                     $this->db->beginTransaction();
-                    $this->db->query('DELETE FROM ' . $this->table() . ' WHERE ID = ' . $resource->getID());
+                    $this->db->query('DELETE FROM ' . $this->table() . ' WHERE ID = ' . $vote->getID());
                     $user->decreaseVotes($this->db, $voteType);
                     $voteType ? $resource->downVote($this->db) : $resource->upVote($this->db);
                     $this->db->commit();
