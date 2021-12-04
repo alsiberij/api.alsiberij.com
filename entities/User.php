@@ -327,14 +327,17 @@ class User extends Entity {
             return ['accessToken' => $this->accessToken, 'expiresIn' => $this->accessTokenExpiration->getTimestamp()];
         }
         $token = $this->generateAccessToken();
-        $success = $this->db->query('UPDATE users SET accessToken = \'' . $token . '\' WHERE ID = ' . $this->ID);
-        if ($success) {
+        try {
+            $this->db->beginTransaction();
+            $this->db->query('UPDATE users SET accessToken = \'' . $token . '\' WHERE ID = ' . $this->ID);
             $expiration = time() + ACCESS_TOKEN_LIFETIME;
             $this->db->query('UPDATE users SET accessTokenExpiration = \'' . date('Y-m-d H:i:s', $expiration) . '\' WHERE ID = ' . $this->ID);
+            $this->db->commit();
             $this->accessToken = $token;
             $this->accessTokenExpiration = (new DateTime())->setTimestamp($expiration);
             return ['accessToken' => $token, 'expiresIn' => $expiration];
-        } else {
+        } catch (PDOException $ex) {
+            $this->db->rollBack();
             return null;
         }
     }
