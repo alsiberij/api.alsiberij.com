@@ -119,9 +119,8 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
                 $accessAllData = true;
             }
 
-            $user = $user->toArray();
-
-            if ($accessAllData || ($user['activationStatus'] && $user['privacy'])) {
+            if ($accessAllData || ($user->isActivated() && $user->getPrivacy())) {
+                $user = $user->toArray();
                 $this->handleUserData($user, $accessAllData);
             } else {
                 $user = null;
@@ -158,7 +157,7 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
             die;
         }
 
-        $attempt = $_POST['attempt'] ?? $_GET['attempt'] ?? null;
+        $attempt = $_POST['attempt'] ?? $_GET['attempt'] ?? '';
         if (!$attempt) {
             http_response_code(400);
             echo(json_encode(['error' => 'Missing parameter: attempt']));
@@ -184,7 +183,7 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
             http_response_code(200);
             echo(json_encode(['response' => 'Success']));
         } elseif ($attempt == 'process') {
-            $deleteToken = $_POST['deleteToken'] ?? $_GET['deleteToken'] ?? null;
+            $deleteToken = $_POST['deleteToken'] ?? $_GET['deleteToken'] ?? '';
             if (!$deleteToken) {
                 http_response_code(400);
                 echo(json_encode(['error' => 'Missing parameter: deleteToken']));
@@ -205,7 +204,7 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
     }
 
     public function activate(): void {
-        $activationToken = $_POST['activationToken'] ?? $_GET['activationToken'] ?? null;
+        $activationToken = $_POST['activationToken'] ?? $_GET['activationToken'] ?? '';
         if (!$activationToken) {
             http_response_code(400);
             echo(json_encode(['error' => 'Missing parameter: activationToken']));
@@ -218,7 +217,6 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
             echo(json_encode(['error' => 'Invalid activation token']));
             die;
         }
-
         if ($user->isActivated()) {
             http_response_code(200);
             echo(json_encode(['response' => 'Already activated']));
@@ -236,24 +234,21 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
     }
 
     public function authenticate(): void {
-        $email = $_POST['email'] ?? $_GET['email'] ?? null;
-        $password = $_POST['password'] ?? $_GET['password'] ?? null;
-        $needToken = $_POST['needToken'] ?? $_GET['needToken'] ?? null;
+        $email = $_POST['email'] ?? $_GET['email'] ?? '';
+        $password = $_POST['password'] ?? $_GET['password'] ?? '';
+        $needToken = $_POST['needToken'] ?? $_GET['needToken'] ?? '';
 
         if (!$email || !$password) {
             http_response_code(400);
             echo(json_encode(['error' => 'Missing parameters: email or password']));
             die;
         }
-
         $email = strtolower($email);
-
         if (!empty(User::validateEmail($email, false)) || !empty(User::validatePassword($password))) {
             http_response_code(400);
             echo(json_encode(['error' => 'Invalid parameters: email or password']));
             die;
         }
-
         $user = $this->creator->newInstanceByEmail($email);
         if ($user) {
             $passedPasswordHash = User::generatePasswordHash($password, $user->getSalt());
@@ -261,7 +256,6 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
         } else {
             $success = false;
         }
-
         http_response_code(200);
         if (!$success) {
             echo(json_encode(['response' => new StdClass]));
@@ -287,13 +281,12 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
             echo(json_encode(['error' => 'Unauthorized']));
             die;
         }
-        $accessToken = $_POST['accessToken'] ?? $_GET['accessToken'] ?? null;
+        $accessToken = $_POST['accessToken'] ?? $_GET['accessToken'] ?? '';
         if (!$accessToken) {
             http_response_code(400);
             echo(json_encode(['error' => 'Token can\'t be refreshed if you are authorized by session ID']));
             die;
         }
-
         $newToken = $this->authorizedUser->refreshAccessToken();
         if ($newToken) {
             http_response_code(200);
@@ -311,13 +304,12 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
             echo(json_encode(['error' => 'Unauthorized']));
             die;
         }
-        $accessToken = $_POST['accessToken'] ?? $_GET['accessToken'] ?? null;
+        $accessToken = $_POST['accessToken'] ?? $_GET['accessToken'] ?? '';
         if (!$accessToken) {
             http_response_code(400);
             echo(json_encode(['error' => 'Token can\'t be revoked if you are authorized by session ID']));
             die;
         }
-
         $success = $this->authorizedUser->revokeAccessToken();
         if ($success) {
             http_response_code(200);
