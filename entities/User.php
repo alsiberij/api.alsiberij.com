@@ -343,15 +343,18 @@ class User extends Entity {
     }
 
     public function revokeAccessToken(): bool {
-        $successTokenDeletion = $this->db->query('UPDATE users SET accessToken = NULL WHERE ID = ' . $this->ID);
-        if ($successTokenDeletion) {
+        try {
+            $this->db->beginTransaction();
+            $this->db->query('UPDATE users SET accessToken = NULL WHERE ID = ' . $this->ID);
+            $this->db->query('UPDATE users SET accessTokenExpiration = NULL WHERE ID = ' . $this->ID);
+            $this->db->commit();
             $this->accessToken = null;
-        }
-        $successExpirationDeletion = $this->db->query('UPDATE users SET accessTokenExpiration = NULL WHERE ID = ' . $this->ID);
-        if ($successExpirationDeletion) {
             $this->accessTokenExpiration = null;
+            return true;
+        } catch (PDOException $ex) {
+            $this->db->rollBack();
+            return false;
         }
-        return $successTokenDeletion && $successExpirationDeletion;
     }
 
     public function isAccessTokenExpired(): bool {
