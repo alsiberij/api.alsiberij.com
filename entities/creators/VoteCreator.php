@@ -3,49 +3,53 @@
 
 abstract class VoteCreator extends EntityCreator {
 
-    public function create(AssessableEntity $resource, User $user, bool $voteType): bool {
+    public function create(AssessableEntity $resource, User $user, bool $voteType): string {
         $vote = $this->newInstanceByResourceAndUser($resource, $user);
         if ($vote) {
             if ($vote->getVoteType() == $voteType) {
-                $this->delete($vote);
-                $s = $user->decreaseVotes($voteType);
-                $s = $s && ($voteType ? $resource->downVote() : $resource->upVote());
+                try {
+                    $this->db->beginTransaction();
+                    $this->db->query('DELETE FROM ' . $this->table() . ' WHERE ID = ' . $resource->getID());
+                    $user->decreaseVotes($this->db, $voteType);
+                    $voteType ? $resource->downVote($this->db) : $resource->upVote($this->db);
+                    $this->db->commit();
+                } catch (PDOException $ex) {
+                    $this->db->rollBack();
+                    return 'Deleting unsuccessful';
+                }
             } else {
-                $s = $vote->changeVoteType();
-                $s = $s && $user->increaseVotes($voteType);
-                $s = $s && $user->decreaseVotes(!$voteType);
-                $s = $s && $resource->changeRating($voteType ? $resource->getRating() + 2: $resource->getRating() - 2);
+                try {
+                    $this->db->beginTransaction();
+                    $vote->changeVoteType($this->db);
+                    $user->increaseVotes($this->db, $voteType);
+                    $user->decreaseVotes($this->db, !$voteType);
+                    $resource->changeRating($this->db, $voteType ? $resource->getRating() + 2: $resource->getRating() - 2);
+                    $this->db->commit();
+                } catch (PDOException $ex) {
+                    $this->db->rollBack();
+                    return 'Changing vote type unsuccessful';
+                }
             }
         } else {
             $resourceID = $resource->getID();
             $userID = $user->getID();
-
-            $query = 'INSERT INTO ' . $this->table() . '(resourceID, userID, voteType) VALUES (:resource, :user, :type)';
-            $result = $this->db->prepare($query);
-            $result->bindParam(':resource', $resourceID, PDO::PARAM_INT);
-            $result->bindParam(':user', $userID, PDO::PARAM_INT);
-            $result->bindParam(':type', $voteType, PDO::PARAM_BOOL);
-            if (!$result->execute()) {
-                http_response_code(500);
-                echo(json_encode(['error' => 'Query can not be executed']));
-                die;
+            try {
+                $this->db->beginTransaction();
+                $query = 'INSERT INTO ' . $this->table() . '(resourceID, userID, voteType) VALUES (:resource, :user, :type)';
+                $result = $this->db->prepare($query);
+                $result->bindParam(':resource', $resourceID, PDO::PARAM_INT);
+                $result->bindParam(':user', $userID, PDO::PARAM_INT);
+                $result->bindParam(':type', $voteType, PDO::PARAM_BOOL);
+                $result->execute();
+                $user->increaseVotes($this->db, $voteType);
+                $voteType ? $resource->upVote($this->db) : $resource->downVote($this->db);
+                $this->db->commit();
+            } catch (PDOException $ex) {
+                $this->db->rollBack();
+                return 'Creating new vote unsuccessful';
             }
-            $s = $user->increaseVotes($voteType);
-            $s = $s && ($voteType ? $resource->upVote() : $resource->downVote());
         }
-        return $s;
-    }
-
-    public function delete(Vote $vote): void {
-        $query = 'DELETE FROM ' . $this->table() . ' WHERE ID = :ID';
-        $result = $this->db->prepare($query);
-        $voteID = $vote->getID();
-        $result->bindParam(':ID', $voteID);
-        if (!$result->execute()) {
-            http_response_code(500);
-            echo(json_encode(['error' => 'Query can not be executed']));
-            die;
-        }
+        return '';
     }
 
     protected abstract function constructObject(array $row): Vote;

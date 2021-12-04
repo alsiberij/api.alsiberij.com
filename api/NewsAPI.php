@@ -128,10 +128,10 @@ class NewsAPI extends API implements Retrievable, Assessable, Creatable {
         }
         $voteType = $voteType == 'up';
 
-        $success = (new NewsVoteCreator())->create($resource, $this->authorizedUser, $voteType);
-        if (!$success) {
+        $error = (new NewsVoteCreator())->create($resource, $this->authorizedUser, $voteType);
+        if ($error) {
             http_response_code(500);
-            echo(json_encode(['error' => 'Something went wrong...']));
+            echo(json_encode(['error' => $error]));
             die;
         }
         http_response_code(200);
