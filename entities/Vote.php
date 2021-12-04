@@ -15,9 +15,9 @@ abstract class Vote extends Entity {
         $this->voteType = $voteType;
     }
 
-    public function changeVoteType(): bool {
+    public function changeVoteType(PDO $db): bool {
         $query = 'UPDATE ' . $this->table() . ' SET voteType = :voteType WHERE ID = ' . $this->ID;
-        $result = $this->db->prepare($query);
+        $result = $db->prepare($query);
         $newVoteType = !$this->voteType;
         $result->bindParam(':voteType', $newVoteType, PDO::PARAM_BOOL);
         $success = $result->execute();

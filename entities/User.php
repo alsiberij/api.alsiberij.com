@@ -281,9 +281,9 @@ class User extends Entity {
         return $this->isActivated;
     }
 
-    public function activate(): bool {
+    public function activate(PDO $db): bool {
         if (!$this->isActivated) {
-            if ($this->db->query('UPDATE ' . $this->table() . ' SET activationStatus = 1 WHERE ID = ' . $this->ID)) {
+            if ($db->query('UPDATE ' . $this->table() . ' SET activationStatus = 1 WHERE ID = ' . $this->ID)) {
                 return true;
             } else {
                 return false;
@@ -322,37 +322,37 @@ class User extends Entity {
         return $token;
     }
 
-    public function getAccessToken(): ?array {
+    public function getAccessToken(PDO $db): ?array {
         if (!$this->isAccessTokenExpired()) {
             return ['accessToken' => $this->accessToken, 'expiresIn' => $this->accessTokenExpiration->getTimestamp()];
         }
         $token = $this->generateAccessToken();
         try {
-            $this->db->beginTransaction();
-            $this->db->query('UPDATE users SET accessToken = \'' . $token . '\' WHERE ID = ' . $this->ID);
+            $db->beginTransaction();
+            $db->query('UPDATE users SET accessToken = \'' . $token . '\' WHERE ID = ' . $this->ID);
             $expiration = time() + ACCESS_TOKEN_LIFETIME;
-            $this->db->query('UPDATE users SET accessTokenExpiration = \'' . date('Y-m-d H:i:s', $expiration) . '\' WHERE ID = ' . $this->ID);
-            $this->db->commit();
+            $db->query('UPDATE users SET accessTokenExpiration = \'' . date('Y-m-d H:i:s', $expiration) . '\' WHERE ID = ' . $this->ID);
+            $db->commit();
             $this->accessToken = $token;
             $this->accessTokenExpiration = (new DateTime())->setTimestamp($expiration);
             return ['accessToken' => $token, 'expiresIn' => $expiration];
         } catch (PDOException $ex) {
-            $this->db->rollBack();
+            $db->rollBack();
             return null;
         }
     }
 
-    public function revokeAccessToken(): bool {
+    public function revokeAccessToken(PDO $db): bool {
         try {
-            $this->db->beginTransaction();
-            $this->db->query('UPDATE users SET accessToken = NULL WHERE ID = ' . $this->ID);
-            $this->db->query('UPDATE users SET accessTokenExpiration = NULL WHERE ID = ' . $this->ID);
-            $this->db->commit();
+            $db->beginTransaction();
+            $db->query('UPDATE users SET accessToken = NULL WHERE ID = ' . $this->ID);
+            $db->query('UPDATE users SET accessTokenExpiration = NULL WHERE ID = ' . $this->ID);
+            $db->commit();
             $this->accessToken = null;
             $this->accessTokenExpiration = null;
             return true;
         } catch (PDOException $ex) {
-            $this->db->rollBack();
+            $db->rollBack();
             return false;
         }
     }
@@ -365,17 +365,17 @@ class User extends Entity {
         }
     }
 
-    public function refreshAccessToken(): ?array {
-        if ($this->revokeAccessToken()) {
-            return $this->getAccessToken();
+    public function refreshAccessToken(PDO $db): ?array {
+        if ($this->revokeAccessToken($db)) {
+            return $this->getAccessToken($db);
         } else {
             return null;
         }
     }
 
-    protected function setVotes(int $votes, bool $voteType): bool {
+    protected function setVotes(PDO $db, int $votes, bool $voteType): bool {
         $query = 'UPDATE ' . $this->table() . ' SET ' . ($voteType ? 'up' : 'down') . 'Votes = :votes WHERE ID = ' . $this->ID;
-        $result = $this->db->prepare($query);
+        $result = $db->prepare($query);
         $result->bindParam(':votes', $votes, PDO::PARAM_INT);
         if (!$result->execute()) {
             return false;
@@ -388,12 +388,12 @@ class User extends Entity {
         return true;
     }
 
-    public function increaseVotes(bool $voteType): bool {
-        return $this->setVotes(($voteType ? $this->upVotes : $this->downVotes) + 1, $voteType);
+    public function increaseVotes(PDO $db, bool $voteType): bool {
+        return $this->setVotes($db, ($voteType ? $this->upVotes : $this->downVotes) + 1, $voteType);
     }
 
-    public function decreaseVotes(bool $voteType): bool {
-        return $this->setVotes(($voteType ? $this->upVotes : $this->downVotes) - 1, $voteType);
+    public function decreaseVotes(PDO $db, bool $voteType): bool {
+        return $this->setVotes($db, ($voteType ? $this->upVotes : $this->downVotes) - 1, $voteType);
     }
 
 }

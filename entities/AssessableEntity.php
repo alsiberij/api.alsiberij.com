@@ -16,14 +16,14 @@ abstract class AssessableEntity extends Entity {
         ]);
     }
 
-    public abstract function changeRating(int $newRating): bool;
+    public abstract function changeRating(PDO $db, int $newRating): bool;
 
-    public final function upVote(): bool {
-        return $this->changeRating($this->rating + 1);
+    public final function upVote(PDO $db): bool {
+        return $this->changeRating($db, $this->rating + 1);
     }
 
-    public final function downVote(): bool {
-        return $this->changeRating($this->rating - 1);
+    public final function downVote(PDO $db): bool {
+        return $this->changeRating($db, $this->rating - 1);
     }
 
     public function getRating(): int {

@@ -221,7 +221,7 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
             http_response_code(200);
             echo(json_encode(['response' => 'Already activated']));
         } else {
-            $success = $user->activate();
+            $success = $user->activate($this->db);
             if (!$success) {
                 http_response_code(500);
                 echo(json_encode(['error' => 'Query can not be executed']));
@@ -261,7 +261,7 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
             echo(json_encode(['response' => new StdClass]));
         } else {
             if ($needToken && $needToken == 'true') {
-                $tokenArray = $user->getAccessToken();
+                $tokenArray = $user->getAccessToken($this->db);
                 if ($tokenArray) {
                     echo(json_encode(['response' => $tokenArray]));
                 } else {
@@ -287,7 +287,7 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
             echo(json_encode(['error' => 'Token can\'t be refreshed if you are authorized by session ID']));
             die;
         }
-        $newToken = $this->authorizedUser->refreshAccessToken();
+        $newToken = $this->authorizedUser->refreshAccessToken($this->db);
         if ($newToken) {
             http_response_code(200);
             echo(json_encode(['response' => $newToken]));
@@ -310,7 +310,7 @@ class UserAPI extends API implements Retrievable, Creatable, Activatable, Authen
             echo(json_encode(['error' => 'Token can\'t be revoked if you are authorized by session ID']));
             die;
         }
-        $success = $this->authorizedUser->revokeAccessToken();
+        $success = $this->authorizedUser->revokeAccessToken($this->db);
         if ($success) {
             http_response_code(200);
             echo(json_encode(['response' => 'Success']));
